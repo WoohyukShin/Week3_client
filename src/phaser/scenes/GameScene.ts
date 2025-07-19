@@ -10,6 +10,9 @@ interface GamePlayer {
   y: number;
   isDancing: boolean;
   isAlive: boolean;
+  commitGauge: number;
+  flowGauge: number;
+  commitCount: number;
 }
 
 interface GameState {
@@ -24,6 +27,8 @@ export default class GameScene extends Phaser.Scene {
   private focusGaugeValue: number = 100;
   private focusBar!: Phaser.GameObjects.Rectangle;
   private focusBarBg!: Phaser.GameObjects.Rectangle;
+  private commitBar!: Phaser.GameObjects.Rectangle;
+  private commitBarBg!: Phaser.GameObjects.Rectangle;
   private playerPositions: { [key: string]: { x: number; y: number } } = {};
 
   constructor() {
@@ -72,11 +77,27 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
+    // Flow Gauge
     this.focusBarBg = this.add.rectangle(20, 20, 200, 20, 0x222222).setOrigin(0, 0);
     this.focusBar = this.add.rectangle(20, 20, 200, 20, 0x00aaff).setOrigin(0, 0);
     
+    // Commit Gauge
+    this.commitBarBg = this.add.rectangle(20, 50, 200, 15, 0x222222).setOrigin(0, 0);
+    this.commitBar = this.add.rectangle(20, 50, 0, 15, 0x00ff00).setOrigin(0, 0);
+    
+    // 게이지 라벨
+    this.add.text(230, 25, 'Flow', { 
+      fontSize: '14px', 
+      color: '#ffffff' 
+    });
+    
+    this.add.text(230, 55, 'Commit', { 
+      fontSize: '14px', 
+      color: '#ffffff' 
+    });
+    
     // 플레이어 수 표시
-    this.add.text(20, 50, 'Players: 0', { 
+    this.add.text(20, 80, 'Players: 0', { 
       fontSize: '16px', 
       color: '#ffffff' 
     }).setName('playerCount');
@@ -136,6 +157,44 @@ export default class GameScene extends Phaser.Scene {
       this.localPlayerId = playerId;
       console.log('Local player ID set:', playerId);
     });
+
+    // === 백엔드 게임 이벤트 연동 ===
+    
+    // 운영진 등장
+    socket.on('managerAppeared', () => {
+      console.log('🚨 Manager appeared!');
+      this.showManagerAppearAnimation();
+    });
+
+    // 플레이어 사망
+    socket.on('playerDied', (data: { socketId: string; reason: string }) => {
+      console.log(`💀 Player died: ${data.socketId}, reason: ${data.reason}`);
+      this.handlePlayerDeath(data.socketId, data.reason);
+    });
+
+    // 커밋 성공
+    socket.on('commitSuccess', (data: { socketId: string; commitCount: number }) => {
+      console.log(`✅ Commit success: ${data.socketId}, count: ${data.commitCount}`);
+      this.showCommitSuccess(data.socketId, data.commitCount);
+    });
+
+    // Push 시작
+    socket.on('pushStarted', (data: { socketId: string }) => {
+      console.log(`🚀 Push started: ${data.socketId}`);
+      this.showPushAnimation(data.socketId);
+    });
+
+    // Push 실패
+    socket.on('pushFailed', (data: { socketId: string }) => {
+      console.log(`❌ Push failed: ${data.socketId}`);
+      this.showPushFailed(data.socketId);
+    });
+
+    // 게임 종료
+    socket.on('gameEnded', (data: { winner: any }) => {
+      console.log('🏁 Game ended:', data.winner);
+      this.handleGameEnd(data.winner);
+    });
   }
 
   setupInput() {
@@ -148,31 +207,18 @@ export default class GameScene extends Phaser.Scene {
       socket.emit('playerAction', { action: 'stopDancing' });
     });
 
-    // 이동 (WASD)
-    this.input.keyboard?.on('keydown-W', () => {
-      socket.emit('playerAction', { action: 'move', payload: { direction: 'up' } });
+    // P키로 push
+    this.input.keyboard?.on('keydown-P', () => {
+      socket.emit('playerAction', { action: 'push' });
     });
 
-    this.input.keyboard?.on('keydown-S', () => {
-      socket.emit('playerAction', { action: 'move', payload: { direction: 'down' } });
-    });
-
-    this.input.keyboard?.on('keydown-A', () => {
-      socket.emit('playerAction', { action: 'move', payload: { direction: 'left' } });
-    });
-
-    this.input.keyboard?.on('keydown-D', () => {
-      socket.emit('playerAction', { action: 'move', payload: { direction: 'right' } });
-    });
-
-    // 테스트용: M키로 운영진 등장 애니메이션 테스트
+    // M : 운영진 등장 모션 보기
     this.input.keyboard?.on('keydown-M', () => {
       this.showManagerAppearAnimation();
     });
   }
 
   setupPlayerPositions() {
-    // 플레이어들이 화면에 고르게 배치되도록 위치 설정
     const positions = [
       { x: 200, y: 200 },
       { x: 600, y: 200 },
@@ -197,6 +243,20 @@ export default class GameScene extends Phaser.Scene {
     const playerCountText = this.children.getByName('playerCount') as Phaser.GameObjects.Text;
     if (playerCountText) {
       playerCountText.setText(`Players: ${gameState.players.length}`);
+    }
+
+    // 로컬 플레이어의 게이지 업데이트
+    const localPlayer = gameState.players.find(p => p.socketId === this.localPlayerId);
+    if (localPlayer) {
+      // 몰입 게이지 (Flow Gauge) 업데이트
+      this.focusGaugeValue = localPlayer.flowGauge || 100;
+      this.focusBar.width = (this.focusGaugeValue / 100) * 200;
+      
+      // 커밋 게이지 (Commit Gauge) 업데이트
+      const commitGaugePercent = (localPlayer.commitGauge / 100) * 200;
+      this.commitBar.width = commitGaugePercent;
+      
+      console.log(`🎮 Local player gauges - Flow: ${localPlayer.flowGauge}, Commit: ${localPlayer.commitGauge}, Commits: ${localPlayer.commitCount}`);
     }
 
     // 플레이어들 업데이트
@@ -333,16 +393,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    // 포커스 게이지 업데이트
-    const decayAmount = (delta / 1000) * 10;
-    this.focusGaugeValue -= decayAmount;
-    this.focusGaugeValue = Phaser.Math.Clamp(this.focusGaugeValue, 0, 100);
-
-    const width = 2 * this.focusGaugeValue;
-    const color = this.focusGaugeValue > 50 ? 0x87cefa : 0x0070ff;
-
-    this.focusBar.setSize(width, 20);
-    this.focusBar.setFillStyle(color);
+    // 백엔드에서 게이지를 관리하므로 로컬 업데이트 제거
+    // 게이지 업데이트는 gameStateUpdate 이벤트에서 처리됨
   }
 
   // 운영진 등장 애니메이션 표시
@@ -364,5 +416,102 @@ export default class GameScene extends Phaser.Scene {
     });
 
     console.log('Manager appear animation started');
+  }
+
+  // 플레이어 사망 처리
+  handlePlayerDeath(socketId: string, reason: string) {
+    const player = this.players.get(socketId);
+    if (player) {
+      player.isAlive = false;
+      player.setTint(0xff0000); // 빨간색으로 표시
+      
+      // 사망 이유 표시
+      const deathText = this.add.text(player.x, player.y - 200, `💀 ${reason}`, {
+        fontSize: '16px',
+        color: '#ff0000',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 2 }
+      }).setOrigin(0.5);
+
+      // 3초 후 사망 텍스트 제거
+      this.time.delayedCall(3000, () => {
+        deathText.destroy();
+      });
+    }
+  }
+
+  // 커밋 성공 표시
+  showCommitSuccess(socketId: string, commitCount: number) {
+    const player = this.players.get(socketId);
+    if (player) {
+      const successText = this.add.text(player.x, player.y - 200, `✅ Commit #${commitCount}!`, {
+        fontSize: '16px',
+        color: '#00ff00',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 2 }
+      }).setOrigin(0.5);
+
+      // 2초 후 텍스트 제거
+      this.time.delayedCall(2000, () => {
+        successText.destroy();
+      });
+    }
+  }
+
+  // Push 애니메이션 표시
+  showPushAnimation(socketId: string) {
+    const player = this.players.get(socketId);
+    if (player) {
+      const pushText = this.add.text(player.x, player.y - 200, '🚀 PUSHING...', {
+        fontSize: '16px',
+        color: '#ffff00',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 2 }
+      }).setOrigin(0.5);
+
+      // 500ms 후 텍스트 제거 (백엔드 PUSH_ANIMATION_DURATION_MS와 동일)
+      this.time.delayedCall(500, () => {
+        pushText.destroy();
+      });
+    }
+  }
+
+  // Push 실패 표시
+  showPushFailed(socketId: string) {
+    const player = this.players.get(socketId);
+    if (player) {
+      const failText = this.add.text(player.x, player.y - 200, '❌ PUSH FAILED!', {
+        fontSize: '16px',
+        color: '#ff0000',
+        backgroundColor: '#000000',
+        padding: { x: 5, y: 2 }
+      }).setOrigin(0.5);
+
+      // 2초 후 텍스트 제거
+      this.time.delayedCall(2000, () => {
+        failText.destroy();
+      });
+    }
+  }
+
+  // 게임 종료 처리
+  handleGameEnd(winner: any) {
+    // 게임 종료 텍스트 표시
+    const gameEndText = this.add.text(
+      this.scale.width / 2, 
+      this.scale.height / 2, 
+      winner ? `🏆 Winner: ${winner.username}!` : '🏁 Game Over - No Winner',
+      {
+        fontSize: '32px',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 20, y: 10 }
+      }
+    ).setOrigin(0.5);
+
+    // 5초 후 로비로 이동
+    this.time.delayedCall(5000, () => {
+      window.location.href = '/';
+    });
   }
 }
