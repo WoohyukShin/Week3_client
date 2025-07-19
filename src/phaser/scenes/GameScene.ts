@@ -427,7 +427,14 @@ export default class GameScene extends Phaser.Scene {
     player.isDancing = playerData.isDancing;
     player.isAlive = playerData.isAlive;
     
-    player.anims.play('coding', true);
+    // 사망 상태면 death 이미지, 생존 상태면 코딩 애니메이션
+    if (playerData.isAlive) {
+      player.anims.play('coding', true);
+    } else {
+      player.setTexture('death-image');
+      player.setScale(this.getImageScale('death-image', 0.8));
+      player.anims.stop();
+    }
 
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
@@ -462,38 +469,48 @@ export default class GameScene extends Phaser.Scene {
       commitText.setText(`Commit: ${playerData.commitCount}`);
     }
 
-    // 애니메이션 상태 변경 감지 (불필요한 재시작 방지)
-    if (playerData.isDancing && !player.isDancing) {
-      player.isDancing = true;
-      // 현재 애니메이션이 dance가 아닐 때만 재생
-      if (player.anims.currentAnim?.key !== 'dance') {
-        player.anims.play('dance', true);
+    // 사망 상태 우선 처리 (사망 시 항상 death 이미지 표시)
+    if (!playerData.isAlive) {
+      if (player.isAlive) {
+        // 사망 상태로 변경
+        player.isAlive = false;
+        player.setTexture('death-image');
+        player.setScale(this.getImageScale('death-image', 0.8));
+        console.log(`💀 Player ${playerData.username} died`);
       }
-      // pkpk 애니메이션용 스케일 적용
-      player.setScale(this.getImageScale('pkpk', 0.4));
-      console.log(`💃 Player ${playerData.username} started dancing`);
-    } else if (!playerData.isDancing && player.isDancing) {
-      player.isDancing = false;
-      // 현재 애니메이션이 coding이 아닐 때만 재생
-      if (player.anims.currentAnim?.key !== 'coding') {
-        player.anims.play('coding', true);
-      }
-      // 원래 크기로 복원
-      player.setScale(this.getImageScale('player', 0.4));
-      console.log(`🛑 Player ${playerData.username} stopped dancing`);
-    }
-
-    // 사망 상태 변경 감지
-    if (!playerData.isAlive && player.isAlive) {
-      player.isAlive = false;
-      player.setTexture('death-image');
-      player.setScale(this.getImageScale('death-image', 0.8));
-      console.log(`💀 Player ${playerData.username} died`);
+      // 사망 상태면 애니메이션 중지하고 death 이미지 유지
+      player.anims.stop();
+      return; // 사망 상태면 다른 애니메이션 처리하지 않음
     } else if (playerData.isAlive && !player.isAlive) {
+      // 부활 처리
       player.isAlive = true;
       player.setTexture('coding');
       player.setScale(this.getImageScale('player', 0.4));
       console.log(`🔄 Player ${playerData.username} revived`);
+    }
+
+    // 생존 상태일 때만 애니메이션 처리
+    if (playerData.isAlive) {
+      // 애니메이션 상태 변경 감지 (불필요한 재시작 방지)
+      if (playerData.isDancing && !player.isDancing) {
+        player.isDancing = true;
+        // 현재 애니메이션이 dance가 아닐 때만 재생
+        if (player.anims.currentAnim?.key !== 'dance') {
+          player.anims.play('dance', true);
+        }
+        // pkpk 애니메이션용 스케일 적용
+        player.setScale(this.getImageScale('pkpk', 0.4));
+        console.log(`💃 Player ${playerData.username} started dancing`);
+      } else if (!playerData.isDancing && player.isDancing) {
+        player.isDancing = false;
+        // 현재 애니메이션이 coding이 아닐 때만 재생
+        if (player.anims.currentAnim?.key !== 'coding') {
+          player.anims.play('coding', true);
+        }
+        // 원래 크기로 복원
+        player.setScale(this.getImageScale('player', 0.4));
+        console.log(`🛑 Player ${playerData.username} stopped dancing`);
+      }
     }
   }
 
@@ -519,6 +536,11 @@ export default class GameScene extends Phaser.Scene {
   handlePlayerAction(data: { socketId: string; action: string; payload?: any }) {
     const player = this.players.get(data.socketId);
     if (!player) return;
+
+    // 사망 상태면 액션 처리하지 않음
+    if (!player.isAlive) {
+      return;
+    }
 
     switch (data.action) {
       case 'startDancing':
@@ -580,20 +602,14 @@ export default class GameScene extends Phaser.Scene {
     console.log('Manager appear animation started');
   }
 
-  // 플레이어 사망 처리
+  // 플레이어 사망 처리 (사망 이유 표시만 담당)
   handlePlayerDeath(socketId: string, reason: string) {
     const player = this.players.get(socketId);
     if (player) {
-      player.isAlive = false;
-      
       // 화면 크기에 비례하여 스케일 계산
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-      
-      // 사망 이미지로 변경
-      player.setTexture('death-image');
-      player.setScale(this.getImageScale('death-image', 0.8)); // 새로운 스케일 시스템 적용
       
       // 사망 이유 표시 (반응형)
       const deathText = this.add.text(player.x, player.y - 200 * scaleFactor, `💀 ${reason}`, {
