@@ -12,7 +12,12 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
-    port: 5173,
-    host: true,
+    proxy: {
+      '/api': {
+        target: 'https://week3server-production.up.railway.app',
+        changeOrigin: true,
+        secure: true,
+      }
+    }
   },
 })
