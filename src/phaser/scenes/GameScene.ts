@@ -45,7 +45,7 @@ export default class GameScene extends Phaser.Scene {
     chair: 0.5,       // 의자 크기
     player: 1.0,      // 플레이어 기본 크기
     'death-image': 0.7, // 사망 이미지 크기
-    door: 1.0,        // 문 이미지 크기
+    door: 1.2,        // 문 이미지 크기
     manager: 1.0      // 매니저 애니메이션 크기
   };
 
@@ -63,41 +63,6 @@ export default class GameScene extends Phaser.Scene {
     return imageScale * scaleFactor;
   }
 
-  // 게임 상태 변경 감지 함수 (최적화용)
-  private hasGameStateChanged(newGameState: GameState): boolean {
-    // 플레이어 수 변경 확인
-    if (this.gameState.players.length !== newGameState.players.length) {
-      return true;
-    }
-
-    // 각 플레이어의 상태 변경 확인
-    for (let i = 0; i < newGameState.players.length; i++) {
-      const newPlayer = newGameState.players[i];
-      const oldPlayer = this.gameState.players.find(p => p.socketId === newPlayer.socketId);
-      
-      if (!oldPlayer) {
-        return true; // 새로운 플레이어 추가
-      }
-
-      // 중요한 상태 변경 확인
-      if (
-        oldPlayer.isDancing !== newPlayer.isDancing ||
-        oldPlayer.isAlive !== newPlayer.isAlive ||
-        oldPlayer.commitCount !== newPlayer.commitCount ||
-        oldPlayer.flowGauge !== newPlayer.flowGauge ||
-        oldPlayer.commitGauge !== newPlayer.commitGauge
-      ) {
-        return true;
-      }
-    }
-
-    // 운영진 등장 상태 변경 확인
-    if (this.gameState.isManagerAppeared !== newGameState.isManagerAppeared) {
-      return true;
-    }
-
-    return false; // 변경사항 없음
-  }
 
   preload() {
     this.load.image('background', '/src/assets/img/game_background.jpg');
@@ -371,14 +336,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateGameState(gameState: GameState) {
-    // 게임 상태가 실제로 변경되었는지 확인 (최적화)
-    const hasStateChanged = this.hasGameStateChanged(gameState);
-    if (!hasStateChanged) {
-      return; // 변경사항이 없으면 업데이트 건너뛰기
-    }
-    
     // 매니저 등장/사라짐 상태 변경 처리
     if (this.gameState.isManagerAppeared !== gameState.isManagerAppeared) {
+      console.log(`🔄 Manager state changed: ${this.gameState.isManagerAppeared} → ${gameState.isManagerAppeared}`);
       if (gameState.isManagerAppeared) {
         this.showManagerAppearAnimation();
       } else {
@@ -398,19 +358,25 @@ export default class GameScene extends Phaser.Scene {
     const localPlayer = gameState.players.find(p => p.socketId === this.localPlayerId);
     if (localPlayer) {
       // UI 스케일 팩터 계산
-      console.log("Hello World!");
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
       const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
       
       // 몰입 게이지 (Flow Gauge) 업데이트
+      const oldFlowGauge = this.focusGaugeValue;
       this.focusGaugeValue = localPlayer.flowGauge || 100;
       this.focusBar.width = (this.focusGaugeValue / 100) * barWidth;
       
       // 커밋 게이지 (Commit Gauge) 업데이트
+      const oldCommitGauge = this.commitBar.width;
       const commitGaugePercent = (localPlayer.commitGauge / 100) * barWidth;
       this.commitBar.width = commitGaugePercent;
+      
+      // 게이지 변경 로그 (디버깅용)
+      if (oldFlowGauge !== this.focusGaugeValue || oldCommitGauge !== this.commitBar.width) {
+        console.log(`📊 [${localPlayer.username}] Flow: ${oldFlowGauge} → ${this.focusGaugeValue}, Commit: ${Math.round(oldCommitGauge)} → ${Math.round(this.commitBar.width)}`);
+      }
       
       console.log(`🎮 Local player gauges - Flow: ${localPlayer.flowGauge}, Commit: ${localPlayer.commitGauge}, Commits: ${localPlayer.commitCount}`);
       console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
@@ -584,22 +550,28 @@ export default class GameScene extends Phaser.Scene {
   showManagerAppearAnimation() {
     // 기존 door 이미지를 manager 애니메이션으로 변경
     if (this.managerSprite) {
+      console.log('🎭 Changing door to manager animation...');
       this.managerSprite.setTexture('manager');
       this.managerSprite.setScale(this.getImageScale('manager'));
       this.managerSprite.play('manager');
       
       console.log('🚨 Manager appeared and started animation!');
+    } else {
+      console.log('❌ Manager sprite not found!');
     }
   }
 
   hideManagerAnimation() {
     // manager 애니메이션을 door 이미지로 변경
     if (this.managerSprite) {
+      console.log('🎭 Changing manager animation back to door...');
       this.managerSprite.setTexture('door');
       this.managerSprite.setScale(this.getImageScale('door'));
       this.managerSprite.stop();
       
       console.log('🚪 Manager disappeared, showing door');
+    } else {
+      console.log('❌ Manager sprite not found!');
     }
   }
 
