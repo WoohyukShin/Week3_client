@@ -1,5 +1,5 @@
 // src/pages/GamePage.tsx
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import GameScene from '../phaser/scenes/GameScene.ts'; // 예시 씬
 

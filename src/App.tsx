@@ -5,7 +5,7 @@ import RoomPage from './pages/RoomPage';
 import GamePage from './pages/GamePage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
-import background from './assets/img/background.png';
+// import background from './assets/img/background.png';
 
 function App() {
   return (

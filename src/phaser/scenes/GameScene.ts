@@ -189,7 +189,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 없는 플레이어들 제거
     const currentPlayerIds = new Set(gameState.players.map(p => p.socketId));
-    this.players.forEach((player, socketId) => {
+    this.players.forEach((_player, socketId) => {
       if (!currentPlayerIds.has(socketId)) {
         this.removePlayer(socketId);
       }
@@ -311,7 +311,7 @@ export default class GameScene extends Phaser.Scene {
     return { x: 400, y: 300 };
   }
 
-  update(time: number, delta: number) {
+  update(_time: number, delta: number) {
     // 포커스 게이지 업데이트
     const decayAmount = (delta / 1000) * 10;
     this.focusGaugeValue -= decayAmount;

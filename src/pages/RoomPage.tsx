@@ -1,8 +1,8 @@
 // src/pages/RoomPage.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socketService from '../services/socket';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 
 interface Player {
   socketId: string;
@@ -21,7 +21,7 @@ const RoomPage = () => {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const { username } = useAuth();
+  // const { username } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

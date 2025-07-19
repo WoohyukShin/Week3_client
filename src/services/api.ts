@@ -2,13 +2,11 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
-// 환경에 따른 API URL 설정
-// Railway 배포 후 실제 도메인으로 변경하세요!
-// 예: https://your-backend-name.railway.app/api
+
 const API_URL = import.meta.env.VITE_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? 'https://week3server-production.up.railway.app/api' // 실제 백엔드 도메인으로 변경
-    : 'http://localhost:3001/api');
+    ? 'https://week3server-production.up.railway.app/api'
+    : 'http://192.168.35.96:3001/api');
 
 const api = axios.create({
   baseURL: API_URL,

@@ -5,8 +5,8 @@ import { io, Socket } from 'socket.io-client';
 // 예: https://your-backend-name.railway.app
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
   (process.env.NODE_ENV === 'production'
-    ? 'https://week3server-production.up.railway.app' // 실제 백엔드 도메인으로 변경
-    : 'http://localhost:3001');
+    ? 'https://week3server-production.up.railway.app' // Railway 배포된 실제 도메인
+    : 'http://192.168.35.96:3001');
 
 class SocketService {
   public socket: Socket | null = null;

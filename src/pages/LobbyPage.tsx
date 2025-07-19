@@ -1,5 +1,5 @@
 // src/pages/LobbyPage.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import socketService from '../services/socket';
 import { getRanking } from '../services/api';
