@@ -385,6 +385,14 @@ export default class GameScene extends Phaser.Scene {
       });
       console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
     } else {
+      // localPlayerId가 설정되지 않은 경우, 첫 번째 플레이어를 로컬 플레이어로 임시 설정
+      if (gameState.players.length > 0 && !this.localPlayerId) {
+        this.localPlayerId = gameState.players[0].socketId;
+        console.log(`🔄 Auto-setting localPlayerId to: ${this.localPlayerId} (${gameState.players[0].username})`);
+        // 재귀 호출로 다시 처리
+        this.updateGameState(gameState);
+        return;
+      }
       console.log(`❌ Local player not found. LocalPlayerId: ${this.localPlayerId}, Available players:`, gameState.players.map(p => p.socketId));
     }
 
