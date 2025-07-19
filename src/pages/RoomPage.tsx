@@ -126,12 +126,12 @@ const RoomPage = () => {
       <div style={{ marginBottom: '20px' }}>
         <h2>Players ({roomState.players.length})</h2>
         <ul style={{ listStyle: 'none', padding: 0 }}>
-          {roomState.players.map((player) => (
+        {roomState.players.map((player) => (
             <li key={player.socketId} style={{ margin: '5px 0' }}>
               {player.username} {player.socketId === roomState.hostId ? '👑 (Host)' : ''}
-            </li>
-          ))}
-        </ul>
+          </li>
+        ))}
+      </ul>
       </div>
 
       <div style={{ marginBottom: '20px' }}>

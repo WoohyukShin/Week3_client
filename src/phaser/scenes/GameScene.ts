@@ -34,6 +34,7 @@ export default class GameScene extends Phaser.Scene {
   private commitBar!: Phaser.GameObjects.Rectangle;
   private commitBarBg!: Phaser.GameObjects.Rectangle;
   private playerPositions: { [key: string]: { x: number; y: number } } = {};
+  private managerSprite!: Phaser.GameObjects.Sprite;
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
   private readonly IMAGE_SCALES = {
@@ -43,7 +44,9 @@ export default class GameScene extends Phaser.Scene {
     desk: 1.0,        // 책상 크기
     chair: 0.5,       // 의자 크기
     player: 1.0,      // 플레이어 기본 크기
-    'death-image': 0.7 // 사망 이미지 크기
+    'death-image': 0.7, // 사망 이미지 크기
+    door: 1.0,        // 문 이미지 크기
+    manager: 1.0      // 매니저 애니메이션 크기
   };
 
   constructor() {
@@ -114,7 +117,12 @@ export default class GameScene extends Phaser.Scene {
       frameWidth: 1154/6,
       frameHeight: 216,
     });
+    this.load.spritesheet('manager', '/src/assets/img/manager.png', {
+      frameWidth: 1093/7,
+      frameHeight: 228,
+    });
 
+    this.load.image('door', '/src/assets/img/door.png');
     this.load.image('death-image', '/src/assets/img/deathplayer.png');
   }
 
@@ -140,6 +148,9 @@ export default class GameScene extends Phaser.Scene {
     
     // 모든 위치에 desk와 chair 미리 배치 (플레이어가 없어도 보이도록)
     this.setupAllDesksAndChairs();
+    
+    // 매니저 위치에 door 이미지 배치 (평소 상태)
+    this.setupManagerArea();
     
     // 게임 상태 요청
     socket.emit('getGameState', {});
@@ -209,12 +220,12 @@ export default class GameScene extends Phaser.Scene {
 
 
 
-    // 운영진 등장 애니메이션 (pkpk 스프라이트시트 사용)
+    // 운영진 등장 애니메이션 (manager 스프라이트시트 사용)
     this.anims.create({
-      key: 'manager-appear',
-      frames: this.anims.generateFrameNumbers('pkpk', { start: 0, end: 5 }), 
-      frameRate: 20,
-      repeat: 0
+      key: 'manager',
+      frames: this.anims.generateFrameNumbers('manager', { start: 0, end: 6 }), 
+      frameRate: 12,
+      repeat: -1
     });
   }
 
@@ -250,12 +261,6 @@ export default class GameScene extends Phaser.Scene {
     });
 
     // === 백엔드 게임 이벤트 연동 ===
-    
-    // 운영진 등장
-    socket.on('managerAppeared', () => {
-      console.log('🚨 Manager appeared!');
-      this.showManagerAppearAnimation();
-    });
 
     // 플레이어 사망
     socket.on('playerDied', (data: { socketId: string; reason: string }) => {
@@ -350,11 +355,35 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+  setupManagerArea() {
+    // 매니저 위치 설정 (화면 3/4 정도)
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+    
+    // 매니저 위치에 door 이미지 배치 (평소 상태)
+    this.managerSprite = this.add.sprite(
+      screenWidth * 0.75, // 화면 3/4 위치
+      screenHeight * 0.3,  // 화면 상단 30% 위치
+      'door'
+    ).setScale(this.getImageScale('door'))
+     .setDepth(2);
+  }
+
   updateGameState(gameState: GameState) {
     // 게임 상태가 실제로 변경되었는지 확인 (최적화)
     const hasStateChanged = this.hasGameStateChanged(gameState);
     if (!hasStateChanged) {
       return; // 변경사항이 없으면 업데이트 건너뛰기
+    }
+    
+    // 매니저 등장/사라짐 상태 변경 처리
+    if (this.gameState.isManagerAppeared !== gameState.isManagerAppeared) {
+      if (gameState.isManagerAppeared) {
+        this.showManagerAppearAnimation();
+      } else {
+        this.hideManagerAnimation();
+      }
     }
     
     this.gameState = gameState;
@@ -553,24 +582,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showManagerAppearAnimation() {
-    const screenWidth = this.scale.width;
-    const screenHeight = this.scale.height;
-    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-    
-    const managerSprite = this.add.sprite(
-      this.scale.width / 2, 
-      100 * scaleFactor,
-      'pkpk'
-    ).setScale(this.getImageScale('pkpk'));
+    // 기존 door 이미지를 manager 애니메이션으로 변경
+    if (this.managerSprite) {
+      this.managerSprite.setTexture('manager');
+      this.managerSprite.setScale(this.getImageScale('manager'));
+      this.managerSprite.play('manager');
+      
+      console.log('🚨 Manager appeared and started animation!');
+    }
+  }
 
-    managerSprite.play('manager-appear');
-
-    managerSprite.once('animationcomplete', () => {
-      console.log('Manager appear animation completed');
-      managerSprite.destroy();
-    });
-
-    console.log('Manager appear animation started');
+  hideManagerAnimation() {
+    // manager 애니메이션을 door 이미지로 변경
+    if (this.managerSprite) {
+      this.managerSprite.setTexture('door');
+      this.managerSprite.setScale(this.getImageScale('door'));
+      this.managerSprite.stop();
+      
+      console.log('🚪 Manager disappeared, showing door');
+    }
   }
 
   handlePlayerDeath(socketId: string, reason: string) {

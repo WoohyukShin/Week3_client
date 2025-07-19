@@ -89,7 +89,7 @@ const LobbyPage = () => {
 
     setIsLoading(true);
     setError('');
-    socketService.emit('joinRoom', { username, roomId: joinRoomId });
+      socketService.emit('joinRoom', { username, roomId: joinRoomId });
   };
 
   const handleShowRanking = async () => {
@@ -109,7 +109,7 @@ const LobbyPage = () => {
     <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
       <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px' }}>
         <div style={{ cursor: 'pointer' }} onClick={handleShowRanking}>
-          🏆
+        🏆
         </div>
         <div style={{ cursor: 'pointer' }} onClick={logout}>
           🚪 로그아웃
