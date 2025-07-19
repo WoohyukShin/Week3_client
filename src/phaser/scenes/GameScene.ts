@@ -6,24 +6,28 @@ import Player from '../object/Player';
 interface GamePlayer {
   socketId: string;
   username: string;
-  x: number;
-  y: number;
   isDancing: boolean;
   isAlive: boolean;
   commitGauge: number;
   flowGauge: number;
   commitCount: number;
+  skill: string | null;
+  bumpercar: boolean;
+  isExercising: boolean;
+  hasCaffeine: boolean;
+  muscleCount: number;
 }
 
 interface GameState {
+  roomId: string;
   players: GamePlayer[];
-  gameStarted: boolean;
+  isManagerAppeared: boolean;
 }
 
 export default class GameScene extends Phaser.Scene {
   private players: Map<string, Player> = new Map();
   private localPlayerId: string = '';
-  private gameState: GameState = { players: [], gameStarted: false };
+  private gameState: GameState = { roomId: '', players: [], isManagerAppeared: false };
   private focusGaugeValue: number = 100;
   private focusBar!: Phaser.GameObjects.Rectangle;
   private focusBarBg!: Phaser.GameObjects.Rectangle;
@@ -41,20 +45,20 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('desk', '/src/assets/img/desk.png');
     
     // 스프라이트시트 로드 (프레임 크기 조정)
-    this.load.spritesheet('coding', '/src/assets/coding.png', {
+    this.load.spritesheet('coding', '/src/assets/img/coding.png', {
       frameWidth: 811/3,
       frameHeight: 308,
     });
-    this.load.spritesheet('exercise', '/src/assets/exercise.png', {
+    this.load.spritesheet('exercise', '/src/assets/img/exercise.png', {
       frameWidth: 1067/5,
       frameHeight: 234,
     });
-    this.load.spritesheet('pkpk', '/src/assets/pkpk.png', {
+    this.load.spritesheet('pkpk', '/src/assets/img/pkpk.png', {
       frameWidth: 1154/6,
       frameHeight: 216,
     });
 
-    this.load.image('death-image', '/src/assets/img/deathimage.png');
+    this.load.image('death-image', '/src/assets/img/deathplayer.png');
   }
 
   create() {
@@ -298,8 +302,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   addPlayer(playerData: GamePlayer) {
-    // 플레이어 위치 결정
-    const position = this.getPlayerPosition(playerData.socketId);
+    // 플레이어 순서에 따라 위치 결정
+    const playerIndex = Array.from(this.players.keys()).length;
+    const positions = Object.values(this.playerPositions);
+    const position = playerIndex < positions.length ? positions[playerIndex] : { x: 400, y: 300 };
     
     // Desk 배치 (가장 뒤)
     const desk = this.add.image(position.x, position.y + 50, 'desk')
@@ -353,17 +359,8 @@ export default class GameScene extends Phaser.Scene {
     const player = this.players.get(playerData.socketId);
     if (!player) return;
 
-    const position = this.getPlayerPosition(playerData.socketId);
-    player.setPosition(position.x, position.y);
-
-    const nameText = player.getData('nameText') as Phaser.GameObjects.Text;
-    if (nameText) {
-      nameText.setPosition(position.x, position.y - 150);
-    }
-
     const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
     if (commitText) {
-      commitText.setPosition(position.x, position.y - 130);
       commitText.setText(`Commit: ${playerData.commitCount}`);
     }
 
@@ -429,18 +426,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  getPlayerPosition(socketId: string): { x: number; y: number } {
-    // 플레이어 순서에 따라 위치 결정
-    const playerIndex = Array.from(this.players.keys()).indexOf(socketId);
-    const positions = Object.values(this.playerPositions);
-    
-    if (playerIndex < positions.length) {
-      return positions[playerIndex];
-    }
-    
-    // 기본 위치
-    return { x: 400, y: 300 };
-  }
+
 
   update(_time: number, delta: number) {
     // 백엔드에서 게이지를 관리하므로 로컬 업데이트 제거
