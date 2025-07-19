@@ -378,7 +378,11 @@ export default class GameScene extends Phaser.Scene {
         console.log(`📊 [${localPlayer.username}] Flow: ${oldFlowGauge} → ${this.focusGaugeValue}, Commit: ${Math.round(oldCommitGauge)} → ${Math.round(this.commitBar.width)}`);
       }
       
-      console.log(`🎮 Local player gauges - Flow: ${localPlayer.flowGauge}, Commit: ${localPlayer.commitGauge}, Commits: ${localPlayer.commitCount}`);
+      // 모든 플레이어의 게이지 상태 로그 (디버깅용)
+      console.log(`🎮 GameState received - Manager: ${gameState.isManagerAppeared}, Players: ${gameState.players.length}`);
+      gameState.players.forEach(p => {
+        console.log(`  👤 [${p.username}] Flow: ${p.flowGauge}, Commit: ${p.commitGauge}, Dancing: ${p.isDancing}, Alive: ${p.isAlive}`);
+      });
       console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
     } else {
       console.log(`❌ Local player not found. LocalPlayerId: ${this.localPlayerId}, Available players:`, gameState.players.map(p => p.socketId));
@@ -482,19 +486,26 @@ export default class GameScene extends Phaser.Scene {
     }
 
     if (playerData.isAlive) {
+      // Exercise 애니메이션 중일 때는 덮어쓰지 않음 (3초간 보호)
+      const isExerciseAnimation = player.anims.currentAnim?.key === 'exercise';
+      
       if (playerData.isDancing && !player.isDancing) {
         player.isDancing = true;
-        if (player.anims.currentAnim?.key !== 'dance') {
+        if (!isExerciseAnimation && player.anims.currentAnim?.key !== 'dance') {
           player.anims.play('dance', true);
         }
-      player.setScale(this.getImageScale('pkpk'));
+        if (!isExerciseAnimation) {
+          player.setScale(this.getImageScale('pkpk'));
+        }
         console.log(`💃 Player ${playerData.username} started dancing`);
       } else if (!playerData.isDancing && player.isDancing) {
         player.isDancing = false;
-        if (player.anims.currentAnim?.key !== 'coding') {
+        if (!isExerciseAnimation && player.anims.currentAnim?.key !== 'coding') {
           player.anims.play('coding', true);
         }
-      player.setScale(this.getImageScale('player'));
+        if (!isExerciseAnimation) {
+          player.setScale(this.getImageScale('player'));
+        }
         console.log(`🛑 Player ${playerData.username} stopped dancing`);
       }
     }
@@ -637,12 +648,17 @@ export default class GameScene extends Phaser.Scene {
   playExerciseAnimation() {
     const localPlayer = this.players.get(this.localPlayerId);
     if (localPlayer) {
+      // Exercise 애니메이션을 강제로 재생하고 3초간 유지
       localPlayer.anims.play('exercise', true);
+      localPlayer.setScale(this.getImageScale('exercise'));
       console.log('🏃 Exercise animation started');
       
+      // 3초 후에 원래 상태로 복귀 (단, 춤추고 있지 않을 때만)
       this.time.delayedCall(3000, () => {
-        if (!localPlayer.isDancing) {
+        if (localPlayer && !localPlayer.isDancing) {
           localPlayer.anims.play('coding', true);
+          localPlayer.setScale(this.getImageScale('player'));
+          console.log('🏃 Exercise animation ended, back to coding');
         }
       });
     }
