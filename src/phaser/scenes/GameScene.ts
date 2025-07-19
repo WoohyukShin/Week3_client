@@ -83,7 +83,7 @@ export default class GameScene extends Phaser.Scene {
       frameHeight: 216,
     });
     this.load.spritesheet('manager', '/src/assets/img/manager.png', {
-      frameWidth: 1093/7,
+      frameWidth: 1093/6,
       frameHeight: 228,
     });
 
@@ -188,7 +188,7 @@ export default class GameScene extends Phaser.Scene {
     // 운영진 등장 애니메이션 (manager 스프라이트시트 사용)
     this.anims.create({
       key: 'manager',
-      frames: this.anims.generateFrameNumbers('manager', { start: 0, end: 6 }), 
+      frames: this.anims.generateFrameNumbers('manager', { start: 0, end: 5 }), 
       frameRate: 12,
       repeat: -1
     });
