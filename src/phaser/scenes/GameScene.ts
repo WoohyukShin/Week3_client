@@ -337,6 +337,7 @@ export default class GameScene extends Phaser.Scene {
 
   updateGameState(gameState: GameState) {
     // 매니저 등장/사라짐 상태 변경 처리
+    console.log(`🔍 Checking manager state: current=${this.gameState.isManagerAppeared}, new=${gameState.isManagerAppeared}`);
     if (this.gameState.isManagerAppeared !== gameState.isManagerAppeared) {
       console.log(`🔄 Manager state changed: ${this.gameState.isManagerAppeared} → ${gameState.isManagerAppeared}`);
       if (gameState.isManagerAppeared) {
@@ -344,6 +345,8 @@ export default class GameScene extends Phaser.Scene {
       } else {
         this.hideManagerAnimation();
       }
+    } else {
+      console.log(`⏸️ Manager state unchanged: ${gameState.isManagerAppeared}`);
     }
     
     this.gameState = gameState;
