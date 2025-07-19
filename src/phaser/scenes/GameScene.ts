@@ -369,6 +369,7 @@ export default class GameScene extends Phaser.Scene {
     const localPlayer = gameState.players.find(p => p.socketId === this.localPlayerId);
     if (localPlayer) {
       // UI 스케일 팩터 계산
+      console.log("Hello World!");
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
@@ -469,52 +470,41 @@ export default class GameScene extends Phaser.Scene {
       commitText.setText(`Commit: ${playerData.commitCount}`);
     }
 
-    // 사망 상태 우선 처리 (사망 시 항상 death 이미지 표시)
     if (!playerData.isAlive) {
       if (player.isAlive) {
-        // 사망 상태로 변경
         player.isAlive = false;
         player.setTexture('death-image');
         player.setScale(this.getImageScale('death-image'));
         console.log(`💀 Player ${playerData.username} died`);
       }
-      // 사망 상태면 애니메이션 중지하고 death 이미지 유지
       player.anims.stop();
-      return; // 사망 상태면 다른 애니메이션 처리하지 않음
+      return;
     } else if (playerData.isAlive && !player.isAlive) {
-      // 부활 처리
       player.isAlive = true;
       player.setTexture('coding');
       player.setScale(this.getImageScale('player'));
       console.log(`🔄 Player ${playerData.username} revived`);
     }
 
-    // 생존 상태일 때만 애니메이션 처리
     if (playerData.isAlive) {
-      // 애니메이션 상태 변경 감지 (불필요한 재시작 방지)
       if (playerData.isDancing && !player.isDancing) {
         player.isDancing = true;
-        // 현재 애니메이션이 dance가 아닐 때만 재생
         if (player.anims.currentAnim?.key !== 'dance') {
           player.anims.play('dance', true);
         }
-              // pkpk 애니메이션용 스케일 적용
       player.setScale(this.getImageScale('pkpk'));
         console.log(`💃 Player ${playerData.username} started dancing`);
       } else if (!playerData.isDancing && player.isDancing) {
         player.isDancing = false;
-        // 현재 애니메이션이 coding이 아닐 때만 재생
         if (player.anims.currentAnim?.key !== 'coding') {
           player.anims.play('coding', true);
         }
-              // 원래 크기로 복원
       player.setScale(this.getImageScale('player'));
         console.log(`🛑 Player ${playerData.username} stopped dancing`);
       }
     }
   }
 
-  // 사망한 플레이어 제거
   removePlayer(socketId: string) {
     const player = this.players.get(socketId);
     if (player) {
@@ -537,7 +527,6 @@ export default class GameScene extends Phaser.Scene {
     const player = this.players.get(data.socketId);
     if (!player) return;
 
-    // 사망 상태면 액션 처리하지 않음
     if (!player.isAlive) {
       return;
     }
@@ -545,55 +534,37 @@ export default class GameScene extends Phaser.Scene {
     switch (data.action) {
       case 'startDancing':
         player.isDancing = true;
-        // 현재 애니메이션이 dance가 아닐 때만 재생
         if (player.anims.currentAnim?.key !== 'dance') {
           player.anims.play('dance', true);
         }
-        player.setScale(this.getImageScale('pkpk')); // pkpk 애니메이션용 스케일
+        player.setScale(this.getImageScale('pkpk'));
         break;
       case 'stopDancing':
         player.isDancing = false;
-        // 현재 애니메이션이 coding이 아닐 때만 재생
         if (player.anims.currentAnim?.key !== 'coding') {
           player.anims.play('coding', true);
         }
-        player.setScale(this.getImageScale('player')); // 원래 크기로 복원
+        player.setScale(this.getImageScale('player'));
         break;
       case 'push':
-        // Push 기능은 백엔드에서만 처리 (시각적 애니메이션 없음)
         console.log('Push action received');
-        break;
-      case 'move':
-        // 이동 로직은 서버에서 처리되므로 여기서는 시각적 효과만
         break;
     }
   }
 
-
-
-  update(_time: number, delta: number) {
-    // 백엔드에서 게이지를 관리하므로 로컬 업데이트 제거
-    // 게이지 업데이트는 gameStateUpdate 이벤트에서 처리됨
-  }
-
-  // 운영진 등장 애니메이션 표시
   showManagerAppearAnimation() {
-    // 화면 크기에 비례하여 스케일 계산
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
     const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
     
-    // 화면 위쪽 중앙에 운영진 스프라이트 생성 (반응형)
     const managerSprite = this.add.sprite(
       this.scale.width / 2, 
-      100 * scaleFactor, // 화면 위쪽
-      'pkpk' // pkpk 스프라이트시트 사용
-    ).setScale(this.getImageScale('pkpk')); // 새로운 스케일 시스템 적용
+      100 * scaleFactor,
+      'pkpk'
+    ).setScale(this.getImageScale('pkpk'));
 
-    // 운영진 등장 애니메이션 재생
     managerSprite.play('manager-appear');
 
-    // 애니메이션 완료 후 스프라이트 제거
     managerSprite.once('animationcomplete', () => {
       console.log('Manager appear animation completed');
       managerSprite.destroy();
@@ -602,16 +573,13 @@ export default class GameScene extends Phaser.Scene {
     console.log('Manager appear animation started');
   }
 
-  // 플레이어 사망 처리 (사망 이유 표시만 담당)
   handlePlayerDeath(socketId: string, reason: string) {
     const player = this.players.get(socketId);
     if (player) {
-      // 화면 크기에 비례하여 스케일 계산
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
       
-      // 사망 이유 표시 (반응형)
       const deathText = this.add.text(player.x, player.y - 200 * scaleFactor, `💀 ${reason}`, {
         fontSize: `${Math.max(14, 16 * scaleFactor)}px`,
         color: '#ff0000',
@@ -619,18 +587,15 @@ export default class GameScene extends Phaser.Scene {
         padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
-      // 3초 후 사망 텍스트 제거
       this.time.delayedCall(3000, () => {
         deathText.destroy();
       });
     }
   }
 
-  // 커밋 성공 표시
   showCommitSuccess(socketId: string, commitCount: number) {
     const player = this.players.get(socketId);
     if (player) {
-      // 화면 크기에 비례하여 스케일 계산
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
@@ -642,17 +607,14 @@ export default class GameScene extends Phaser.Scene {
         padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
-      // 2초 후 텍스트 제거
       this.time.delayedCall(2000, () => {
         successText.destroy();
       });
     }
   }
-  // Push 실패 표시
   showPushFailed(socketId: string) {
     const player = this.players.get(socketId);
     if (player) {
-      // 화면 크기에 비례하여 스케일 계산
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
@@ -664,21 +626,18 @@ export default class GameScene extends Phaser.Scene {
         padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
-      // 2초 후 텍스트 제거
       this.time.delayedCall(2000, () => {
         failText.destroy();
       });
     }
   }
 
-  // 운동 애니메이션 재생 (테스트용)
   playExerciseAnimation() {
     const localPlayer = this.players.get(this.localPlayerId);
     if (localPlayer) {
       localPlayer.anims.play('exercise', true);
       console.log('🏃 Exercise animation started');
       
-      // 3초 후 코딩 애니메이션으로 복귀
       this.time.delayedCall(3000, () => {
         if (!localPlayer.isDancing) {
           localPlayer.anims.play('coding', true);
@@ -687,9 +646,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // 게임 종료 처리
   handleGameEnd(winner: any) {
-    // 게임 종료 텍스트 표시
     const gameEndText = this.add.text(
       this.scale.width / 2, 
       this.scale.height / 2, 
@@ -702,7 +659,6 @@ export default class GameScene extends Phaser.Scene {
       }
     ).setOrigin(0.5);
 
-    // 5초 후 로비로 이동
     this.time.delayedCall(5000, () => {
       window.location.href = '/';
     });
