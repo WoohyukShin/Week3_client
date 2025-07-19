@@ -35,8 +35,29 @@ export default class GameScene extends Phaser.Scene {
   private commitBarBg!: Phaser.GameObjects.Rectangle;
   private playerPositions: { [key: string]: { x: number; y: number } } = {};
 
+  // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
+  private readonly IMAGE_SCALES = {
+    coding: 1.0,      // 코딩 애니메이션 기본 크기
+    exercise: 1.2,    // 운동 애니메이션 20% 확대
+    pkpk: 1.5,        // pkpk 애니메이션 50% 확대
+    desk: 0.8,        // 책상 20% 축소
+    chair: 0.7,       // 의자 30% 축소
+    player: 1.0,      // 플레이어 기본 크기
+    'death-image': 1.1 // 사망 이미지 10% 확대
+  };
+
   constructor() {
     super('GameScene');
+  }
+
+  // 이미지별 스케일 계산 헬퍼 함수
+  private getImageScale(imageKey: string, baseScale: number = 1.0): number {
+    const imageScale = this.IMAGE_SCALES[imageKey as keyof typeof this.IMAGE_SCALES] || 1.0;
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+    
+    return baseScale * imageScale * scaleFactor;
   }
 
   preload() {
@@ -46,8 +67,8 @@ export default class GameScene extends Phaser.Scene {
     
     // 스프라이트시트 로드 (프레임 크기 조정)
     this.load.spritesheet('coding', '/src/assets/img/coding.png', {
-      frameWidth: 811/3,
-      frameHeight: 308,
+      frameWidth: 809/3,
+      frameHeight: 307,
     });
     this.load.spritesheet('exercise', '/src/assets/img/exercise.png', {
       frameWidth: 1067/5,
@@ -80,6 +101,9 @@ export default class GameScene extends Phaser.Scene {
     
     // 초기 플레이어 위치 설정
     this.setupPlayerPositions();
+    
+    // 모든 위치에 desk와 chair 미리 배치 (플레이어가 없어도 보이도록)
+    this.setupAllDesksAndChairs();
     
     // 게임 상태 요청
     socket.emit('getGameState', {});
@@ -271,6 +295,25 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+  setupAllDesksAndChairs() {
+    // 모든 플레이어 위치에 desk와 chair 미리 배치
+    Object.values(this.playerPositions).forEach((position) => {
+      const screenWidth = this.scale.width;
+      const screenHeight = this.scale.height;
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+      
+      // Desk 배치 (가장 뒤) - 새로운 스케일 시스템 적용
+      this.add.image(position.x, position.y + 50 * scaleFactor, 'desk')
+        .setScale(this.getImageScale('desk', 0.6))
+        .setDepth(1);
+      
+      // Chair 배치 (가장 앞) - 새로운 스케일 시스템 적용
+      this.add.image(position.x, position.y + 120 * scaleFactor, 'chair')
+        .setScale(this.getImageScale('chair', 0.6))
+        .setDepth(3);
+    });
+  }
+
   updateGameState(gameState: GameState) {
     this.gameState = gameState;
     
@@ -327,17 +370,7 @@ export default class GameScene extends Phaser.Scene {
     const positions = Object.values(this.playerPositions);
     const position = playerIndex < positions.length ? positions[playerIndex] : { x: 400, y: 300 };
     
-    // Desk 배치 (가장 뒤)
-    const desk = this.add.image(position.x, position.y + 50, 'desk')
-      .setScale(0.6)
-      .setDepth(1);
-    
-    // Chair 배치 (가장 앞)
-    const chair = this.add.image(position.x, position.y + 120, 'chair')
-      .setScale(0.6)
-      .setDepth(3);
-    
-    // Player 배치 (중간)
+    // Player 배치 (중간) - 새로운 스케일 시스템 적용
     const player = new Player(
       this, 
       position.x, 
@@ -347,27 +380,30 @@ export default class GameScene extends Phaser.Scene {
       playerData.username
     );
     
-    player.setScale(0.4).setDepth(2);
+    player.setScale(this.getImageScale('player', 0.4)).setDepth(2);
 
     player.isDancing = playerData.isDancing;
     player.isAlive = playerData.isAlive;
     
     player.anims.play('coding', true);
-    player.setData('desk', desk);
-    player.setData('chair', chair);
 
-    const nameText = this.add.text(position.x, position.y - 150, playerData.username, {
-      fontSize: '14px',
+    // 텍스트도 반응형으로
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+    const fontSize = Math.max(12, 14 * scaleFactor);
+    const nameText = this.add.text(position.x, position.y - 150 * scaleFactor, playerData.username, {
+      fontSize: `${fontSize}px`,
       color: '#ffffff',
       backgroundColor: '#000000',
-      padding: { x: 5, y: 2 }
+      padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
     }).setOrigin(0.5);
 
-    const commitText = this.add.text(position.x, position.y - 130, `Commit: ${playerData.commitCount}`, {
-      fontSize: '12px',
+    const commitText = this.add.text(position.x, position.y - 130 * scaleFactor, `Commit: ${playerData.commitCount}`, {
+      fontSize: `${Math.max(10, 12 * scaleFactor)}px`,
       color: '#00ff00',
       backgroundColor: '#000000',
-      padding: { x: 5, y: 2 }
+      padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
     }).setOrigin(0.5);
 
     player.setData('nameText', nameText);
@@ -387,10 +423,14 @@ export default class GameScene extends Phaser.Scene {
     if (playerData.isDancing && !player.isDancing) {
       player.isDancing = true;
       player.anims.play('dance', true);
+      // pkpk 애니메이션용 스케일 적용
+      player.setScale(this.getImageScale('pkpk', 0.4));
       console.log(`💃 Player ${playerData.username} started dancing`);
     } else if (!playerData.isDancing && player.isDancing) {
       player.isDancing = false;
       player.anims.play('coding', true);
+      // 원래 크기로 복원
+      player.setScale(this.getImageScale('player', 0.4));
       console.log(`🛑 Player ${playerData.username} stopped dancing`);
     }
 
@@ -431,10 +471,12 @@ export default class GameScene extends Phaser.Scene {
       case 'startDancing':
         player.isDancing = true;
         player.anims.play('dance', true);
+        player.setScale(this.getImageScale('pkpk', 0.4)); // pkpk 애니메이션용 스케일
         break;
       case 'stopDancing':
         player.isDancing = false;
-        player.anims.play('idle', true);
+        player.anims.play('coding', true);
+        player.setScale(this.getImageScale('player', 0.4)); // 원래 크기로 복원
         break;
       case 'push':
         // Push 기능은 백엔드에서만 처리 (시각적 애니메이션 없음)
@@ -455,12 +497,17 @@ export default class GameScene extends Phaser.Scene {
 
   // 운영진 등장 애니메이션 표시
   showManagerAppearAnimation() {
-    // 화면 위쪽 중앙에 운영진 스프라이트 생성
+    // 화면 크기에 비례하여 스케일 계산
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+    
+    // 화면 위쪽 중앙에 운영진 스프라이트 생성 (반응형)
     const managerSprite = this.add.sprite(
       this.scale.width / 2, 
-      100, // 화면 위쪽
-      'player'
-    ).setScale(0.8);
+      100 * scaleFactor, // 화면 위쪽
+      'pkpk' // pkpk 스프라이트시트 사용
+    ).setScale(this.getImageScale('pkpk', 0.8)); // 새로운 스케일 시스템 적용
 
     // 운영진 등장 애니메이션 재생
     managerSprite.play('manager-appear');
@@ -480,16 +527,21 @@ export default class GameScene extends Phaser.Scene {
     if (player) {
       player.isAlive = false;
       
+      // 화면 크기에 비례하여 스케일 계산
+      const screenWidth = this.scale.width;
+      const screenHeight = this.scale.height;
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+      
       // 사망 이미지로 변경
       player.setTexture('death-image');
-      player.setScale(0.8); // 크기 조정
+      player.setScale(this.getImageScale('death-image', 0.8)); // 새로운 스케일 시스템 적용
       
-      // 사망 이유 표시
-      const deathText = this.add.text(player.x, player.y - 200, `💀 ${reason}`, {
-        fontSize: '16px',
+      // 사망 이유 표시 (반응형)
+      const deathText = this.add.text(player.x, player.y - 200 * scaleFactor, `💀 ${reason}`, {
+        fontSize: `${Math.max(14, 16 * scaleFactor)}px`,
         color: '#ff0000',
         backgroundColor: '#000000',
-        padding: { x: 5, y: 2 }
+        padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
       // 3초 후 사망 텍스트 제거
@@ -503,11 +555,16 @@ export default class GameScene extends Phaser.Scene {
   showCommitSuccess(socketId: string, commitCount: number) {
     const player = this.players.get(socketId);
     if (player) {
-      const successText = this.add.text(player.x, player.y - 200, `✅ Commit #${commitCount}!`, {
-        fontSize: '16px',
+      // 화면 크기에 비례하여 스케일 계산
+      const screenWidth = this.scale.width;
+      const screenHeight = this.scale.height;
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+      
+      const successText = this.add.text(player.x, player.y - 200 * scaleFactor, `✅ Commit #${commitCount}!`, {
+        fontSize: `${Math.max(14, 16 * scaleFactor)}px`,
         color: '#00ff00',
         backgroundColor: '#000000',
-        padding: { x: 5, y: 2 }
+        padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
       // 2초 후 텍스트 제거
@@ -520,11 +577,16 @@ export default class GameScene extends Phaser.Scene {
   showPushFailed(socketId: string) {
     const player = this.players.get(socketId);
     if (player) {
-      const failText = this.add.text(player.x, player.y - 200, '❌ PUSH FAILED!', {
-        fontSize: '16px',
+      // 화면 크기에 비례하여 스케일 계산
+      const screenWidth = this.scale.width;
+      const screenHeight = this.scale.height;
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
+      
+      const failText = this.add.text(player.x, player.y - 200 * scaleFactor, '❌ PUSH FAILED!', {
+        fontSize: `${Math.max(14, 16 * scaleFactor)}px`,
         color: '#ff0000',
         backgroundColor: '#000000',
-        padding: { x: 5, y: 2 }
+        padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
 
       // 2초 후 텍스트 제거
