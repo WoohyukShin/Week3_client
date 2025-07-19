@@ -2,11 +2,9 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
-
-const API_URL = import.meta.env.VITE_API_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://week3server-production.up.railway.app/api'
-    : 'http://192.168.35.96:3001/api');
+// API_URL
+// const API_URL = 'http://192.168.35.96:3001/api'; // 로컬 테스트용
+const API_URL = 'https://week3server-production.up.railway.app/api'; // Railway 배포용
 
 const api = axios.create({
   baseURL: API_URL,
