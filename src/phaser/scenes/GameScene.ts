@@ -60,6 +60,42 @@ export default class GameScene extends Phaser.Scene {
     return baseScale * imageScale * scaleFactor;
   }
 
+  // 게임 상태 변경 감지 함수 (최적화용)
+  private hasGameStateChanged(newGameState: GameState): boolean {
+    // 플레이어 수 변경 확인
+    if (this.gameState.players.length !== newGameState.players.length) {
+      return true;
+    }
+
+    // 각 플레이어의 상태 변경 확인
+    for (let i = 0; i < newGameState.players.length; i++) {
+      const newPlayer = newGameState.players[i];
+      const oldPlayer = this.gameState.players.find(p => p.socketId === newPlayer.socketId);
+      
+      if (!oldPlayer) {
+        return true; // 새로운 플레이어 추가
+      }
+
+      // 중요한 상태 변경 확인
+      if (
+        oldPlayer.isDancing !== newPlayer.isDancing ||
+        oldPlayer.isAlive !== newPlayer.isAlive ||
+        oldPlayer.commitCount !== newPlayer.commitCount ||
+        oldPlayer.flowGauge !== newPlayer.flowGauge ||
+        oldPlayer.commitGauge !== newPlayer.commitGauge
+      ) {
+        return true;
+      }
+    }
+
+    // 운영진 등장 상태 변경 확인
+    if (this.gameState.isManagerAppeared !== newGameState.isManagerAppeared) {
+      return true;
+    }
+
+    return false; // 변경사항 없음
+  }
+
   preload() {
     this.load.image('background', '/src/assets/img/game_background.jpg');
     this.load.image('chair', '/src/assets/img/chair.png');
@@ -315,6 +351,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateGameState(gameState: GameState) {
+    // 게임 상태가 실제로 변경되었는지 확인 (최적화)
+    const hasStateChanged = this.hasGameStateChanged(gameState);
+    if (!hasStateChanged) {
+      return; // 변경사항이 없으면 업데이트 건너뛰기
+    }
+    
     this.gameState = gameState;
     
     // 플레이어 수 업데이트
@@ -420,27 +462,38 @@ export default class GameScene extends Phaser.Scene {
       commitText.setText(`Commit: ${playerData.commitCount}`);
     }
 
+    // 애니메이션 상태 변경 감지 (불필요한 재시작 방지)
     if (playerData.isDancing && !player.isDancing) {
       player.isDancing = true;
-      player.anims.play('dance', true);
+      // 현재 애니메이션이 dance가 아닐 때만 재생
+      if (player.anims.currentAnim?.key !== 'dance') {
+        player.anims.play('dance', true);
+      }
       // pkpk 애니메이션용 스케일 적용
       player.setScale(this.getImageScale('pkpk', 0.4));
       console.log(`💃 Player ${playerData.username} started dancing`);
     } else if (!playerData.isDancing && player.isDancing) {
       player.isDancing = false;
-      player.anims.play('coding', true);
+      // 현재 애니메이션이 coding이 아닐 때만 재생
+      if (player.anims.currentAnim?.key !== 'coding') {
+        player.anims.play('coding', true);
+      }
       // 원래 크기로 복원
       player.setScale(this.getImageScale('player', 0.4));
       console.log(`🛑 Player ${playerData.username} stopped dancing`);
     }
 
-    player.isAlive = playerData.isAlive;
-    if (!playerData.isAlive) {
+    // 사망 상태 변경 감지
+    if (!playerData.isAlive && player.isAlive) {
+      player.isAlive = false;
       player.setTexture('death-image');
-      player.setScale(0.8);
-    } else {
-      player.setTexture('player');
-      player.setScale(1);
+      player.setScale(this.getImageScale('death-image', 0.8));
+      console.log(`💀 Player ${playerData.username} died`);
+    } else if (playerData.isAlive && !player.isAlive) {
+      player.isAlive = true;
+      player.setTexture('coding');
+      player.setScale(this.getImageScale('player', 0.4));
+      console.log(`🔄 Player ${playerData.username} revived`);
     }
   }
 
@@ -470,12 +523,18 @@ export default class GameScene extends Phaser.Scene {
     switch (data.action) {
       case 'startDancing':
         player.isDancing = true;
-        player.anims.play('dance', true);
+        // 현재 애니메이션이 dance가 아닐 때만 재생
+        if (player.anims.currentAnim?.key !== 'dance') {
+          player.anims.play('dance', true);
+        }
         player.setScale(this.getImageScale('pkpk', 0.4)); // pkpk 애니메이션용 스케일
         break;
       case 'stopDancing':
         player.isDancing = false;
-        player.anims.play('coding', true);
+        // 현재 애니메이션이 coding이 아닐 때만 재생
+        if (player.anims.currentAnim?.key !== 'coding') {
+          player.anims.play('coding', true);
+        }
         player.setScale(this.getImageScale('player', 0.4)); // 원래 크기로 복원
         break;
       case 'push':
