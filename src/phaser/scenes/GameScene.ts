@@ -232,12 +232,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupPlayerPositions() {
-    // 4명 플레이어를 하단 한 줄에 배치
+    // 4명 플레이어를 하단 한 줄에 배치 (겹치지 않도록 간격 조정)
     const positions = [
-      { x: 200, y: 500 },
-      { x: 400, y: 500 },  // 2번 플레이어
-      { x: 600, y: 500 },  // 3번 플레이어
-      { x: 800, y: 500 }   // 4번 플레이어
+      { x: 150, y: 500 },  // 1번 플레이어
+      { x: 350, y: 500 },  // 2번 플레이어
+      { x: 550, y: 500 },  // 3번 플레이어
+      { x: 750, y: 500 }   // 4번 플레이어
     ];
 
     positions.forEach((pos, index) => {
@@ -266,6 +266,9 @@ export default class GameScene extends Phaser.Scene {
       this.commitBar.width = commitGaugePercent;
       
       console.log(`🎮 Local player gauges - Flow: ${localPlayer.flowGauge}, Commit: ${localPlayer.commitGauge}, Commits: ${localPlayer.commitCount}`);
+      console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
+    } else {
+      console.log(`❌ Local player not found. LocalPlayerId: ${this.localPlayerId}, Available players:`, gameState.players.map(p => p.socketId));
     }
 
     // 플레이어들 업데이트
@@ -356,9 +359,11 @@ export default class GameScene extends Phaser.Scene {
     if (playerData.isDancing && !player.isDancing) {
       player.isDancing = true;
       player.anims.play('dance', true);
+      console.log(`💃 Player ${playerData.username} started dancing`);
     } else if (!playerData.isDancing && player.isDancing) {
       player.isDancing = false;
       player.anims.play('idle', true);
+      console.log(`🛑 Player ${playerData.username} stopped dancing`);
     }
 
     // 생존 상태 업데이트
