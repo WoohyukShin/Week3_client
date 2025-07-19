@@ -43,4 +43,8 @@ export const registerUser = (userData: any) => api.post('/users/register', userD
 export const loginUser = (credentials: any) => api.post('/users/login', credentials);
 export const getRanking = () => api.get('/users/ranking');
 
+// 중복확인 API
+export const checkUsername = (username: string) => api.get(`/users/check-username/${username}`);
+export const checkNickname = (nickname: string) => api.get(`/users/check-nickname/${nickname}`);
+
 export default api;
