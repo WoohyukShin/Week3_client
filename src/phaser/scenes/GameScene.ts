@@ -37,13 +37,13 @@ export default class GameScene extends Phaser.Scene {
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
   private readonly IMAGE_SCALES = {
-    coding: 1.0,      // 코딩 애니메이션 기본 크기
-    exercise: 1.2,    // 운동 애니메이션 20% 확대
-    pkpk: 1.5,        // pkpk 애니메이션 50% 확대
-    desk: 0.8,        // 책상 20% 축소
-    chair: 0.7,       // 의자 30% 축소
+    coding: 1.0,      // 코딩 애니메이션 크기
+    exercise: 1.2,    // 운동 애니메이션 크기
+    pkpk: 1.5,      // pkpk 애니메이션 크기
+    desk: 1.0,        // 책상 크기
+    chair: 0.7,       // 의자 크기
     player: 1.0,      // 플레이어 기본 크기
-    'death-image': 1.1 // 사망 이미지 10% 확대
+    'death-image': 0.7 // 사망 이미지 크기
   };
 
   constructor() {
@@ -51,13 +51,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // 이미지별 스케일 계산 헬퍼 함수
-  private getImageScale(imageKey: string, baseScale: number = 1.0): number {
+  private getImageScale(imageKey: string): number {
     const imageScale = this.IMAGE_SCALES[imageKey as keyof typeof this.IMAGE_SCALES] || 1.0;
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
     const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
     
-    return baseScale * imageScale * scaleFactor;
+    return imageScale * scaleFactor;
   }
 
   // 게임 상태 변경 감지 함수 (최적화용)
@@ -151,9 +151,9 @@ export default class GameScene extends Phaser.Scene {
     const screenHeight = this.scale.height;
     const uiScale = Math.min(screenWidth / 1200, screenHeight / 800); // UI 스케일 팩터
     
-    const barWidth = 200 * uiScale;
-    const barHeight = 20 * uiScale;
-    const commitBarHeight = 15 * uiScale;
+    const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
+    const barHeight = 20 * uiScale * 1.5; // 게이지 바 높이 1.5배 확대
+    const commitBarHeight = 15 * uiScale * 1.5; // 커밋 게이지 높이 1.5배 확대
     const fontSize = Math.max(12, 14 * uiScale);
     
     // Flow Gauge
@@ -340,12 +340,12 @@ export default class GameScene extends Phaser.Scene {
       
       // Desk 배치 (가장 뒤) - 새로운 스케일 시스템 적용
       this.add.image(position.x, position.y + 50 * scaleFactor, 'desk')
-        .setScale(this.getImageScale('desk', 0.6))
+        .setScale(this.getImageScale('desk'))
         .setDepth(1);
       
       // Chair 배치 (가장 앞) - 새로운 스케일 시스템 적용
       this.add.image(position.x, position.y + 120 * scaleFactor, 'chair')
-        .setScale(this.getImageScale('chair', 0.6))
+        .setScale(this.getImageScale('chair'))
         .setDepth(3);
     });
   }
@@ -372,7 +372,7 @@ export default class GameScene extends Phaser.Scene {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
-      const barWidth = 200 * uiScale;
+      const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
       
       // 몰입 게이지 (Flow Gauge) 업데이트
       this.focusGaugeValue = localPlayer.flowGauge || 100;
@@ -422,7 +422,7 @@ export default class GameScene extends Phaser.Scene {
       playerData.username
     );
     
-    player.setScale(this.getImageScale('player', 0.4)).setDepth(2);
+    player.setScale(this.getImageScale('player')).setDepth(2);
 
     player.isDancing = playerData.isDancing;
     player.isAlive = playerData.isAlive;
@@ -432,7 +432,7 @@ export default class GameScene extends Phaser.Scene {
       player.anims.play('coding', true);
     } else {
       player.setTexture('death-image');
-      player.setScale(this.getImageScale('death-image', 0.8));
+      player.setScale(this.getImageScale('death-image'));
       player.anims.stop();
     }
 
@@ -475,7 +475,7 @@ export default class GameScene extends Phaser.Scene {
         // 사망 상태로 변경
         player.isAlive = false;
         player.setTexture('death-image');
-        player.setScale(this.getImageScale('death-image', 0.8));
+        player.setScale(this.getImageScale('death-image'));
         console.log(`💀 Player ${playerData.username} died`);
       }
       // 사망 상태면 애니메이션 중지하고 death 이미지 유지
@@ -485,7 +485,7 @@ export default class GameScene extends Phaser.Scene {
       // 부활 처리
       player.isAlive = true;
       player.setTexture('coding');
-      player.setScale(this.getImageScale('player', 0.4));
+      player.setScale(this.getImageScale('player'));
       console.log(`🔄 Player ${playerData.username} revived`);
     }
 
@@ -498,8 +498,8 @@ export default class GameScene extends Phaser.Scene {
         if (player.anims.currentAnim?.key !== 'dance') {
           player.anims.play('dance', true);
         }
-        // pkpk 애니메이션용 스케일 적용
-        player.setScale(this.getImageScale('pkpk', 0.4));
+              // pkpk 애니메이션용 스케일 적용
+      player.setScale(this.getImageScale('pkpk'));
         console.log(`💃 Player ${playerData.username} started dancing`);
       } else if (!playerData.isDancing && player.isDancing) {
         player.isDancing = false;
@@ -507,8 +507,8 @@ export default class GameScene extends Phaser.Scene {
         if (player.anims.currentAnim?.key !== 'coding') {
           player.anims.play('coding', true);
         }
-        // 원래 크기로 복원
-        player.setScale(this.getImageScale('player', 0.4));
+              // 원래 크기로 복원
+      player.setScale(this.getImageScale('player'));
         console.log(`🛑 Player ${playerData.username} stopped dancing`);
       }
     }
@@ -549,7 +549,7 @@ export default class GameScene extends Phaser.Scene {
         if (player.anims.currentAnim?.key !== 'dance') {
           player.anims.play('dance', true);
         }
-        player.setScale(this.getImageScale('pkpk', 0.4)); // pkpk 애니메이션용 스케일
+        player.setScale(this.getImageScale('pkpk')); // pkpk 애니메이션용 스케일
         break;
       case 'stopDancing':
         player.isDancing = false;
@@ -557,7 +557,7 @@ export default class GameScene extends Phaser.Scene {
         if (player.anims.currentAnim?.key !== 'coding') {
           player.anims.play('coding', true);
         }
-        player.setScale(this.getImageScale('player', 0.4)); // 원래 크기로 복원
+        player.setScale(this.getImageScale('player')); // 원래 크기로 복원
         break;
       case 'push':
         // Push 기능은 백엔드에서만 처리 (시각적 애니메이션 없음)
@@ -588,7 +588,7 @@ export default class GameScene extends Phaser.Scene {
       this.scale.width / 2, 
       100 * scaleFactor, // 화면 위쪽
       'pkpk' // pkpk 스프라이트시트 사용
-    ).setScale(this.getImageScale('pkpk', 0.8)); // 새로운 스케일 시스템 적용
+    ).setScale(this.getImageScale('pkpk')); // 새로운 스케일 시스템 적용
 
     // 운영진 등장 애니메이션 재생
     managerSprite.play('manager-appear');
