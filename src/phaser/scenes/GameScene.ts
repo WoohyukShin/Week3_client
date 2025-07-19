@@ -42,6 +42,9 @@ export default class GameScene extends Phaser.Scene {
       frameHeight: 240,
     });
     
+    // 사망 이미지 로드
+    this.load.image('death-image', '/src/assets/img/deathimage.png');
+    
     // 테스트용 이미지 로드
     this.load.image('test-image', '/src/assets/img/example1.png');
   }
@@ -104,6 +107,15 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupAnimations() {
+    // 기본 상태 (0번 프레임)
+    this.anims.create({
+      key: 'idle',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 0 }), 
+      frameRate: 1,
+      repeat: -1
+    });
+
+    // 춤추기 애니메이션 (0-3번 프레임 반복)
     this.anims.create({
       key: 'dance',
       frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
@@ -111,11 +123,12 @@ export default class GameScene extends Phaser.Scene {
       repeat: -1
     });
 
+    // Push 애니메이션 (0-3번 프레임 한 번 재생)
     this.anims.create({
-      key: 'idle',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 0 }), 
-      frameRate: 1,
-      repeat: -1
+      key: 'push',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
+      frameRate: 10,
+      repeat: 0
     });
 
     // 운영진 등장 애니메이션 (400ms 동안 재생)
@@ -219,16 +232,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupPlayerPositions() {
+    // 4명 플레이어를 하단 한 줄에 배치
     const positions = [
-      { x: 200, y: 200 },
-      { x: 600, y: 200 },
-      { x: 200, y: 400 },
-      { x: 600, y: 400 },
-      { x: 400, y: 300 },
-      { x: 100, y: 300 },
-      { x: 700, y: 300 },
-      { x: 400, y: 100 },
-      { x: 400, y: 500 }
+      { x: 200, y: 500 },
+      { x: 400, y: 500 },  // 2번 플레이어
+      { x: 600, y: 500 },  // 3번 플레이어
+      { x: 800, y: 500 }   // 4번 플레이어
     ];
 
     positions.forEach((pos, index) => {
@@ -309,7 +318,16 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 5, y: 2 }
     }).setOrigin(0.5);
 
+    // 커밋 횟수 표시
+    const commitText = this.add.text(position.x, position.y - 130, `Commit: ${playerData.commitCount}`, {
+      fontSize: '12px',
+      color: '#00ff00',
+      backgroundColor: '#000000',
+      padding: { x: 5, y: 2 }
+    }).setOrigin(0.5);
+
     player.setData('nameText', nameText);
+    player.setData('commitText', commitText);
     this.players.set(playerData.socketId, player);
   }
 
@@ -327,6 +345,13 @@ export default class GameScene extends Phaser.Scene {
       nameText.setPosition(position.x, position.y - 150);
     }
 
+    // 커밋 횟수 텍스트 위치 및 내용 업데이트
+    const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
+    if (commitText) {
+      commitText.setPosition(position.x, position.y - 130);
+      commitText.setText(`Commit: ${playerData.commitCount}`);
+    }
+
     // 춤추기 상태 업데이트
     if (playerData.isDancing && !player.isDancing) {
       player.isDancing = true;
@@ -339,9 +364,13 @@ export default class GameScene extends Phaser.Scene {
     // 생존 상태 업데이트
     player.isAlive = playerData.isAlive;
     if (!playerData.isAlive) {
-      player.setTint(0xff0000); // 빨간색으로 표시
+      // 사망 이미지로 변경
+      player.setTexture('death-image');
+      player.setScale(0.8);
     } else {
-      player.clearTint();
+      // 생존 상태면 기본 이미지로 복귀
+      player.setTexture('player');
+      player.setScale(1);
     }
   }
 
@@ -352,6 +381,12 @@ export default class GameScene extends Phaser.Scene {
       const nameText = player.getData('nameText') as Phaser.GameObjects.Text;
       if (nameText) {
         nameText.destroy();
+      }
+
+      // 커밋 텍스트 제거
+      const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
+      if (commitText) {
+        commitText.destroy();
       }
       
       // 플레이어 제거
@@ -372,6 +407,18 @@ export default class GameScene extends Phaser.Scene {
       case 'stopDancing':
         player.isDancing = false;
         player.anims.play('idle', true);
+        break;
+      case 'push':
+        // Push 애니메이션 재생
+        player.anims.play('push', true);
+        // 애니메이션 완료 후 기본 상태로 복귀
+        player.once('animationcomplete', () => {
+          if (player.isDancing) {
+            player.anims.play('dance', true);
+          } else {
+            player.anims.play('idle', true);
+          }
+        });
         break;
       case 'move':
         // 이동 로직은 서버에서 처리되므로 여기서는 시각적 효과만
@@ -423,7 +470,10 @@ export default class GameScene extends Phaser.Scene {
     const player = this.players.get(socketId);
     if (player) {
       player.isAlive = false;
-      player.setTint(0xff0000); // 빨간색으로 표시
+      
+      // 사망 이미지로 변경
+      player.setTexture('death-image');
+      player.setScale(0.8); // 크기 조정
       
       // 사망 이유 표시
       const deathText = this.add.text(player.x, player.y - 200, `💀 ${reason}`, {
