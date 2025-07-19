@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import socketService from '../services/socket';
 import { getRanking } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import './LobbyPage.css';
 
 interface Ranking {
   username: string;
@@ -92,79 +93,56 @@ const LobbyPage = () => {
     socketService.emit('joinRoom', { username, roomId: joinRoomId });
   };
 
-  const handleShowRanking = async () => {
-    if (!showRanking) {
-      try {
-        const { data } = await getRanking();
-        setRankings(data);
-      } catch (error) {
-        console.error('Failed to fetch ranking', error);
-        setError('랭킹을 불러오는데 실패했습니다.');
-      }
-    }
-    setShowRanking(!showRanking);
-  };
+return (
+  <div className="page-container">
+    <div className="lobby-background" />
 
-  return (
-    <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
-      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px' }}>
-        <div style={{ cursor: 'pointer' }} onClick={handleShowRanking}>
-          🏆
-        </div>
-        <div style={{ cursor: 'pointer' }} onClick={logout}>
-          🚪 로그아웃
-        </div>
-      </div>
-      
-      <h1>Lobby</h1>
-      <p>Welcome, {username}!</p>
-
-      {error && (
-        <div style={{ color: 'red', marginBottom: '20px' }}>
-          {error}
-        </div>
-      )}
-
-      <div>
-        <h2>Create Room</h2>
-        <input 
-          type="text" 
-          placeholder="Room Name" 
-          value={roomName} 
-          onChange={(e) => setRoomName(e.target.value)} 
-          disabled={isLoading}
-        />
-        <button onClick={handleCreateRoom} disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create'}
-        </button>
-      </div>
-
-      <div>
-        <h2>Join Room</h2>
-        <input 
-          type="text" 
-          placeholder="Room ID" 
-          value={joinRoomId} 
-          onChange={(e) => setJoinRoomId(e.target.value)} 
-          disabled={isLoading}
-        />
-        <button onClick={handleJoinRoom} disabled={isLoading}>
-          {isLoading ? 'Joining...' : 'Join'}
-        </button>
-      </div>
-
-      {showRanking && (
-        <div style={{ marginTop: '30px', border: '1px solid white', padding: '10px' }}>
-          <h2>Ranking</h2>
-          <ol>
-            {rankings.map((r, index) => (
-              <li key={index}>{r.username}: {r.score}</li>
-            ))}
-          </ol>
-        </div>
-      )}
+    <div className="top-bar">
+      <button className="icon-button" onClick={() => navigate('/ranking')}>View Rankings</button>
+      <button className="icon-button" onClick={logout}>Logout</button>
     </div>
-  );
-};
+
+    <div className="lobby-card">
+      <h1 style={{ color: '#000000ff' }}>Welcome, {username}!</h1>
+
+      {error && <div className="error-text">{error}</div>}
+
+      <div className="form-section">
+        <h2>Create Room</h2>
+        <div className="form-group">
+          <input
+            type="text"
+            placeholder="Room Name"
+            value={roomName}
+            onChange={(e) => setRoomName(e.target.value)}
+            disabled={isLoading}
+            className="lobby-input"
+          />
+          <button onClick={handleCreateRoom} disabled={isLoading} className="lobby-btn">
+            {isLoading ? 'Creating...' : 'Create'}
+          </button>
+        </div>
+      </div>
+
+      <div className="form-section">
+        <h2>Join Room</h2>
+        <div className="form-group">
+          <input
+            type="text"
+            placeholder="Room ID"
+            value={joinRoomId}
+            onChange={(e) => setJoinRoomId(e.target.value)}
+            disabled={isLoading}
+            className="lobby-input"
+          />
+          <button onClick={handleJoinRoom} disabled={isLoading} className="lobby-btn join">
+            {isLoading ? 'Joining...' : 'Join'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+}
 
 export default LobbyPage;

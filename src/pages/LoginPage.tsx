@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { loginUser, registerUser, checkUsername, checkNickname } from '../services/api';
+import './LoginPage.css';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -91,11 +92,14 @@ const LoginPage = () => {
     return status.available ? '#4CAF50' : '#f44336';
   };
 
-  return (
-    <div style={{ color: 'white', textAlign: 'center', paddingTop: '100px' }}>
+return (
+  <div className="page-container">
+    <div className="login-background" />
+    <div className="login-card">
       <h1>{isLogin ? '로그인' : '회원가입'}</h1>
+
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
+        <div className="form-group">
           <input
             type="text"
             placeholder="사용자명"
@@ -104,122 +108,81 @@ const LoginPage = () => {
               setUsername(e.target.value);
               setUsernameStatus(null);
             }}
+            className="login-input"
             required
-            style={{ marginRight: '10px' }}
           />
           {!isLogin && (
-            <button 
-              type="button" 
-              onClick={handleCheckUsername}
-              disabled={isCheckingUsername}
-              style={{ 
-                padding: '5px 10px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="button" onClick={handleCheckUsername} disabled={isCheckingUsername} className="check-btn">
               {isCheckingUsername ? '확인중...' : '중복확인'}
             </button>
           )}
-          {!isLogin && usernameStatus && (
-            <div style={{ 
-              color: getStatusColor(usernameStatus), 
-              fontSize: '12px', 
-              marginTop: '5px' 
-            }}>
-              {usernameStatus.message}
-            </div>
-          )}
         </div>
-        
-        <div style={{ marginBottom: '15px' }}>
+
+        {!isLogin && usernameStatus && (
+          <div style={{ color: getStatusColor(usernameStatus), fontSize: '12px', marginBottom: '5px' }}>
+            {usernameStatus.message}
+          </div>
+        )}
+
+        {!isLogin && (
+          <>
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="닉네임"
+                value={nickname}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setNicknameStatus(null);
+                }}
+                className="login-input"
+                required
+              />
+              <button type="button" onClick={handleCheckNickname} disabled={isCheckingNickname} className="check-btn">
+                {isCheckingNickname ? '확인중...' : '중복확인'}
+              </button>
+            </div>
+
+            {nicknameStatus && (
+              <div style={{ color: getStatusColor(nicknameStatus), fontSize: '12px', marginBottom: '5px' }}>
+                {nicknameStatus.message}
+              </div>
+            )}
+          </>
+        )}
+
+
+        <div className="form-group">
           <input
             type="password"
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="login-input"
             required
           />
         </div>
-        
-        {!isLogin && (
-          <div style={{ marginBottom: '15px' }}>
-            <input
-              type="text"
-              placeholder="닉네임"
-              value={nickname}
-              onChange={(e) => {
-                setNickname(e.target.value);
-                setNicknameStatus(null);
-              }}
-              required
-              style={{ marginRight: '10px' }}
-            />
-            <button 
-              type="button" 
-              onClick={handleCheckNickname}
-              disabled={isCheckingNickname}
-              style={{ 
-                padding: '5px 10px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer'
-              }}
-            >
-              {isCheckingNickname ? '확인중...' : '중복확인'}
-            </button>
-            {nicknameStatus && (
-              <div style={{ 
-                color: getStatusColor(nicknameStatus), 
-                fontSize: '12px', 
-                marginTop: '5px' 
-              }}>
-                {nicknameStatus.message}
-              </div>
-            )}
-          </div>
-        )}
-        
-        <button type="submit" style={{ 
-          padding: '10px 20px',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          marginBottom: '15px'
-        }}>
+
+        <button type="submit" className={isLogin ? 'login-btn' : 'register-btn'}>
           {isLogin ? '로그인' : '회원가입'}
         </button>
+
+        {error && <p style={{ color: 'red', fontSize: '14px' }}>{error}</p>}
       </form>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <button 
+
+      <button
+        className="toggle-btn"
         onClick={() => {
           setIsLogin(!isLogin);
           setError('');
           setUsernameStatus(null);
           setNicknameStatus(null);
         }}
-        style={{ 
-          padding: '8px 16px',
-          backgroundColor: '#666',
-          color: 'white',
-          border: 'none',
-          borderRadius: '3px',
-          cursor: 'pointer'
-        }}
       >
         {isLogin ? '계정이 없으신가요? 회원가입' : '계정이 있으신가요? 로그인'}
       </button>
     </div>
-  );
-};
-
+  </div>
+);
+}
 export default LoginPage;

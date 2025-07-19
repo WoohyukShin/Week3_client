@@ -1,0 +1,134 @@
+/* Full-page wrapper */
+.page-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Blurred background image */
+.lobby-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('/img/loginbg.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(6px);
+  transform: scale(1.05);
+}
+
+.lobby-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Glass-like card box */
+.lobby-card {
+  background-color: rgba(255, 255, 255, 0.9); /* match login */
+  padding: 100px 60px;
+  border-radius: 20px;
+  max-width: 800px;
+  width: 100%;
+  min-height: 500px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Header */
+.lobby-card h1 {
+  margin-bottom: 90px;
+  font-size: 3rem;
+}
+
+/* Top-right buttons */
+.top-bar {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 16px;
+  z-index: 10;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: rgb(255, 241, 241);
+  font-size: 30px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Input/Button section */
+.form-section {
+  margin-bottom: 35px;
+    font-size: 25px;
+  font-weight: 600;
+}
+
+.form-section h2 {
+  margin-bottom: 6px; /* was ~default (~16px or more), now narrower */
+}
+
+.form-group {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* align vertically */
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Inputs */
+.lobby-input {
+  width: 420px;
+  height: 64px; /* ✅ Set explicit height */
+  padding: 0 16px; /* ⛔ Remove vertical padding */
+  font-size: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #eee;
+}
+
+/* Buttons */
+.lobby-btn {
+  min-width: 220px;
+  height: 64px; /* ✅ Match input height */
+  font-size: 25px;
+  border-radius: 10px;
+  border: none;
+  background-color: #f1e05a;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+}
+
+.lobby-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.lobby-btn.join {
+  background-color: #ffd966;
+}
+
+/* Error text */
+.error-text {
+  color: red;
+  margin-bottom: 16px;
+}

@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage';
 import LobbyPage from './pages/LobbyPage';
 import RoomPage from './pages/RoomPage';
 import GamePage from './pages/GamePage';
+import RankingPage from './pages/RankingPage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 // import background from './assets/img/background.png';
@@ -10,7 +11,6 @@ import './App.css';
 function App() {
   return (
     <>
-      <div className="background-container" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route 
@@ -38,6 +38,11 @@ function App() {
           } 
         />
       </Routes>
+
+<Routes>
+  <Route path="/ranking" element={<RankingPage />} />
+</Routes>
+
     </>
   );
 }
