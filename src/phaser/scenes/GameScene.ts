@@ -142,7 +142,7 @@ export default class GameScene extends Phaser.Scene {
     // 운영진 등장 애니메이션 (pkpk 스프라이트시트 사용)
     this.anims.create({
       key: 'manager-appear',
-      frames: this.anims.generateFrameNumbers('pkpk', { start: 0, end: 55 }), 
+      frames: this.anims.generateFrameNumbers('pkpk', { start: 0, end: 5 }), 
       frameRate: 20,
       repeat: 0
     });
