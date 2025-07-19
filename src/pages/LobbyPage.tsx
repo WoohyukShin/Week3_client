@@ -18,7 +18,7 @@ const LobbyPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { username } = useAuth();
+  const { username, logout } = useAuth();
 
   useEffect(() => {
     // 컴포넌트 마운트 시 소켓 연결
@@ -107,8 +107,13 @@ const LobbyPage = () => {
 
   return (
     <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
-      <div style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }} onClick={handleShowRanking}>
-        🏆
+      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px' }}>
+        <div style={{ cursor: 'pointer' }} onClick={handleShowRanking}>
+          🏆
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={logout}>
+          🚪 로그아웃
+        </div>
       </div>
       
       <h1>Lobby</h1>

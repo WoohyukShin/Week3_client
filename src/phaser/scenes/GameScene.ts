@@ -36,6 +36,9 @@ export default class GameScene extends Phaser.Scene {
       frameWidth: 240, 
       frameHeight: 240,
     });
+    
+    // 테스트용 이미지 로드
+    this.load.image('test-image', '/src/assets/img/example1.png');
   }
 
   create() {
@@ -43,6 +46,11 @@ export default class GameScene extends Phaser.Scene {
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
       .setDisplaySize(this.scale.width, this.scale.height);
+
+    // 테스트용 이미지 표시 (화면 중앙)
+    this.add.image(this.scale.width / 2, this.scale.height / 2, 'test-image')
+      .setScale(0.5)
+      .setName('test-image');
 
     // UI 설정
     this.setupUI();
@@ -87,6 +95,14 @@ export default class GameScene extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('player', { start: 0, end: 0 }), 
       frameRate: 1,
       repeat: -1
+    });
+
+    // 운영진 등장 애니메이션 (400ms 동안 재생)
+    this.anims.create({
+      key: 'manager-appear',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
+      frameRate: 10, // 400ms / 4프레임 = 10fps
+      repeat: 0 // 한 번만 재생
     });
   }
 
@@ -147,6 +163,11 @@ export default class GameScene extends Phaser.Scene {
 
     this.input.keyboard?.on('keydown-D', () => {
       socket.emit('playerAction', { action: 'move', payload: { direction: 'right' } });
+    });
+
+    // 테스트용: M키로 운영진 등장 애니메이션 테스트
+    this.input.keyboard?.on('keydown-M', () => {
+      this.showManagerAppearAnimation();
     });
   }
 
@@ -322,5 +343,26 @@ export default class GameScene extends Phaser.Scene {
 
     this.focusBar.setSize(width, 20);
     this.focusBar.setFillStyle(color);
+  }
+
+  // 운영진 등장 애니메이션 표시
+  showManagerAppearAnimation() {
+    // 화면 위쪽 중앙에 운영진 스프라이트 생성
+    const managerSprite = this.add.sprite(
+      this.scale.width / 2, 
+      100, // 화면 위쪽
+      'player'
+    ).setScale(0.8);
+
+    // 운영진 등장 애니메이션 재생
+    managerSprite.play('manager-appear');
+
+    // 애니메이션 완료 후 스프라이트 제거
+    managerSprite.once('animationcomplete', () => {
+      console.log('Manager appear animation completed');
+      managerSprite.destroy();
+    });
+
+    console.log('Manager appear animation started');
   }
 }
