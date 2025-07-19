@@ -11,8 +11,8 @@ const GamePage = () => {
     if (gameContainer.current && !gameInstance.current) {
       const config: Phaser.Types.Core.GameConfig = {
         type: Phaser.AUTO,
-        width: 800,
-        height: 600,
+        width: 1200,  // 800에서 1200으로 확대
+        height: 800,  // 600에서 800으로 확대
         parent: gameContainer.current,
         scene: [GameScene],
         physics: {

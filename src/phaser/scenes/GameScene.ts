@@ -37,28 +37,30 @@ export default class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.image('background', '/src/assets/img/game_background.jpg');
-    this.load.spritesheet('player', '/src/assets/img/example1.png', {
-      frameWidth: 240, 
-      frameHeight: 240,
+    this.load.image('chair', '/src/assets/img/chair.png');
+    this.load.image('desk', '/src/assets/img/desk.png');
+    
+    // 스프라이트시트 로드 (프레임 크기 조정)
+    this.load.spritesheet('coding', '/src/assets/coding.png', {
+      frameWidth: 811/3,
+      frameHeight: 308,
     });
-    
-    // 사망 이미지 로드
+    this.load.spritesheet('exercise', '/src/assets/exercise.png', {
+      frameWidth: 1067/5,
+      frameHeight: 234,
+    });
+    this.load.spritesheet('pkpk', '/src/assets/pkpk.png', {
+      frameWidth: 1154/6,
+      frameHeight: 216,
+    });
+
     this.load.image('death-image', '/src/assets/img/deathimage.png');
-    
-    // 테스트용 이미지 로드
-    this.load.image('test-image', '/src/assets/img/example1.png');
   }
 
   create() {
-    // 배경 설정
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
       .setDisplaySize(this.scale.width, this.scale.height);
-
-    // 테스트용 이미지 표시 (화면 중앙)
-    this.add.image(this.scale.width / 2, this.scale.height / 2, 'test-image')
-      .setScale(0.5)
-      .setName('test-image');
 
     // UI 설정
     this.setupUI();
@@ -107,36 +109,38 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupAnimations() {
-    // 기본 상태 (0번 프레임)
+    // 코딩 애니메이션 (기본 상태)
     this.anims.create({
-      key: 'idle',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 0 }), 
-      frameRate: 1,
+      key: 'coding',
+      frames: this.anims.generateFrameNumbers('coding', { start: 0, end: 2 }), 
+      frameRate: 6,
       repeat: -1
     });
 
-    // 춤추기 애니메이션 (0-3번 프레임 반복)
+    // 춤추기 애니메이션 (pkpk 스프라이트시트)
     this.anims.create({
       key: 'dance',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
+      frames: this.anims.generateFrameNumbers('pkpk', { start: 0, end: 5 }), 
+      frameRate: 12,
+      repeat: -1
+    });
+
+    // 운동 애니메이션 (exercise 스프라이트시트)
+    this.anims.create({
+      key: 'exercise',
+      frames: this.anims.generateFrameNumbers('exercise', { start: 0, end: 4 }), 
       frameRate: 8,
       repeat: -1
     });
 
-    // Push 애니메이션 (0-3번 프레임 한 번 재생)
-    this.anims.create({
-      key: 'push',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
-      frameRate: 10,
-      repeat: 0
-    });
 
-    // 운영진 등장 애니메이션 (400ms 동안 재생)
+
+    // 운영진 등장 애니메이션 (pkpk 스프라이트시트 사용)
     this.anims.create({
       key: 'manager-appear',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), 
-      frameRate: 10, // 400ms / 4프레임 = 10fps
-      repeat: 0 // 한 번만 재생
+      frames: this.anims.generateFrameNumbers('pkpk', { start: 0, end: 55 }), 
+      frameRate: 20,
+      repeat: 0
     });
   }
 
@@ -194,7 +198,6 @@ export default class GameScene extends Phaser.Scene {
     // Push 시작
     socket.on('pushStarted', (data: { socketId: string }) => {
       console.log(`🚀 Push started: ${data.socketId}`);
-      this.showPushAnimation(data.socketId);
     });
 
     // Push 실패
@@ -225,6 +228,11 @@ export default class GameScene extends Phaser.Scene {
       socket.emit('playerAction', { action: 'push' });
     });
 
+    // E키로 운동 애니메이션 (테스트용)
+    this.input.keyboard?.on('keydown-E', () => {
+      this.playExerciseAnimation();
+    });
+
     // M : 운영진 등장 모션 보기
     this.input.keyboard?.on('keydown-M', () => {
       this.showManagerAppearAnimation();
@@ -232,12 +240,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupPlayerPositions() {
-    // 4명 플레이어를 하단 한 줄에 배치 (겹치지 않도록 간격 조정)
+    // 4명 플레이어를 하단 한 줄에 배치 (간격 확대)
     const positions = [
-      { x: 150, y: 500 },  // 1번 플레이어
-      { x: 350, y: 500 },  // 2번 플레이어
-      { x: 550, y: 500 },  // 3번 플레이어
-      { x: 750, y: 500 }   // 4번 플레이어
+      { x: 200, y: 600 },  // 1번 플레이어
+      { x: 500, y: 600 },  // 2번 플레이어
+      { x: 800, y: 600 },  // 3번 플레이어
+      { x: 1100, y: 600 }  // 4번 플레이어
     ];
 
     positions.forEach((pos, index) => {
@@ -293,27 +301,35 @@ export default class GameScene extends Phaser.Scene {
     // 플레이어 위치 결정
     const position = this.getPlayerPosition(playerData.socketId);
     
+    // Desk 배치 (가장 뒤)
+    const desk = this.add.image(position.x, position.y + 50, 'desk')
+      .setScale(0.6)
+      .setDepth(1);
+    
+    // Chair 배치 (가장 앞)
+    const chair = this.add.image(position.x, position.y + 80, 'chair')
+      .setScale(0.5)
+      .setDepth(3);
+    
+    // Player 배치 (중간)
     const player = new Player(
       this, 
       position.x, 
       position.y, 
-      'player', 
+      'coding', 
       parseInt(playerData.socketId.slice(-4), 16), // 간단한 ID 생성
       playerData.username
     );
+    
+    player.setScale(0.4).setDepth(2);
 
-    // 플레이어 상태 설정
     player.isDancing = playerData.isDancing;
     player.isAlive = playerData.isAlive;
     
-    // 애니메이션 설정
-    if (playerData.isDancing) {
-      player.anims.play('dance', true);
-    } else {
-      player.anims.play('idle', true);
-    }
+    player.anims.play('coding', true);
+    player.setData('desk', desk);
+    player.setData('chair', chair);
 
-    // 사용자명 표시
     const nameText = this.add.text(position.x, position.y - 150, playerData.username, {
       fontSize: '14px',
       color: '#ffffff',
@@ -321,7 +337,6 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 5, y: 2 }
     }).setOrigin(0.5);
 
-    // 커밋 횟수 표시
     const commitText = this.add.text(position.x, position.y - 130, `Commit: ${playerData.commitCount}`, {
       fontSize: '12px',
       color: '#00ff00',
@@ -338,63 +353,54 @@ export default class GameScene extends Phaser.Scene {
     const player = this.players.get(playerData.socketId);
     if (!player) return;
 
-    // 위치 업데이트
     const position = this.getPlayerPosition(playerData.socketId);
     player.setPosition(position.x, position.y);
 
-    // 이름 텍스트 위치 업데이트
     const nameText = player.getData('nameText') as Phaser.GameObjects.Text;
     if (nameText) {
       nameText.setPosition(position.x, position.y - 150);
     }
 
-    // 커밋 횟수 텍스트 위치 및 내용 업데이트
     const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
     if (commitText) {
       commitText.setPosition(position.x, position.y - 130);
       commitText.setText(`Commit: ${playerData.commitCount}`);
     }
 
-    // 춤추기 상태 업데이트
     if (playerData.isDancing && !player.isDancing) {
       player.isDancing = true;
       player.anims.play('dance', true);
       console.log(`💃 Player ${playerData.username} started dancing`);
     } else if (!playerData.isDancing && player.isDancing) {
       player.isDancing = false;
-      player.anims.play('idle', true);
+      player.anims.play('coding', true);
       console.log(`🛑 Player ${playerData.username} stopped dancing`);
     }
 
-    // 생존 상태 업데이트
     player.isAlive = playerData.isAlive;
     if (!playerData.isAlive) {
-      // 사망 이미지로 변경
       player.setTexture('death-image');
       player.setScale(0.8);
     } else {
-      // 생존 상태면 기본 이미지로 복귀
       player.setTexture('player');
       player.setScale(1);
     }
   }
 
+  // 사망한 플레이어 제거
   removePlayer(socketId: string) {
     const player = this.players.get(socketId);
     if (player) {
-      // 이름 텍스트 제거
       const nameText = player.getData('nameText') as Phaser.GameObjects.Text;
       if (nameText) {
         nameText.destroy();
       }
 
-      // 커밋 텍스트 제거
       const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
       if (commitText) {
         commitText.destroy();
       }
       
-      // 플레이어 제거
       player.destroy();
       this.players.delete(socketId);
     }
@@ -414,16 +420,8 @@ export default class GameScene extends Phaser.Scene {
         player.anims.play('idle', true);
         break;
       case 'push':
-        // Push 애니메이션 재생
-        player.anims.play('push', true);
-        // 애니메이션 완료 후 기본 상태로 복귀
-        player.once('animationcomplete', () => {
-          if (player.isDancing) {
-            player.anims.play('dance', true);
-          } else {
-            player.anims.play('idle', true);
-          }
-        });
+        // Push 기능은 백엔드에서만 처리 (시각적 애니메이션 없음)
+        console.log('Push action received');
         break;
       case 'move':
         // 이동 로직은 서버에서 처리되므로 여기서는 시각적 효과만
@@ -512,25 +510,6 @@ export default class GameScene extends Phaser.Scene {
       });
     }
   }
-
-  // Push 애니메이션 표시
-  showPushAnimation(socketId: string) {
-    const player = this.players.get(socketId);
-    if (player) {
-      const pushText = this.add.text(player.x, player.y - 200, '🚀 PUSHING...', {
-        fontSize: '16px',
-        color: '#ffff00',
-        backgroundColor: '#000000',
-        padding: { x: 5, y: 2 }
-      }).setOrigin(0.5);
-
-      // 500ms 후 텍스트 제거 (백엔드 PUSH_ANIMATION_DURATION_MS와 동일)
-      this.time.delayedCall(500, () => {
-        pushText.destroy();
-      });
-    }
-  }
-
   // Push 실패 표시
   showPushFailed(socketId: string) {
     const player = this.players.get(socketId);
@@ -545,6 +524,22 @@ export default class GameScene extends Phaser.Scene {
       // 2초 후 텍스트 제거
       this.time.delayedCall(2000, () => {
         failText.destroy();
+      });
+    }
+  }
+
+  // 운동 애니메이션 재생 (테스트용)
+  playExerciseAnimation() {
+    const localPlayer = this.players.get(this.localPlayerId);
+    if (localPlayer) {
+      localPlayer.anims.play('exercise', true);
+      console.log('🏃 Exercise animation started');
+      
+      // 3초 후 코딩 애니메이션으로 복귀
+      this.time.delayedCall(3000, () => {
+        if (!localPlayer.isDancing) {
+          localPlayer.anims.play('coding', true);
+        }
       });
     }
   }
