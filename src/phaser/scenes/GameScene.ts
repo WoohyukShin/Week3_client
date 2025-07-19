@@ -86,28 +86,38 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
+    // 화면 크기에 비례하여 UI 크기 설정
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    const uiScale = Math.min(screenWidth / 1200, screenHeight / 800); // UI 스케일 팩터
+    
+    const barWidth = 200 * uiScale;
+    const barHeight = 20 * uiScale;
+    const commitBarHeight = 15 * uiScale;
+    const fontSize = Math.max(12, 14 * uiScale);
+    
     // Flow Gauge
-    this.focusBarBg = this.add.rectangle(20, 20, 200, 20, 0x222222).setOrigin(0, 0);
-    this.focusBar = this.add.rectangle(20, 20, 200, 20, 0x00aaff).setOrigin(0, 0);
+    this.focusBarBg = this.add.rectangle(20 * uiScale, 20 * uiScale, barWidth, barHeight, 0x222222).setOrigin(0, 0);
+    this.focusBar = this.add.rectangle(20 * uiScale, 20 * uiScale, barWidth, barHeight, 0x00aaff).setOrigin(0, 0);
     
     // Commit Gauge
-    this.commitBarBg = this.add.rectangle(20, 50, 200, 15, 0x222222).setOrigin(0, 0);
-    this.commitBar = this.add.rectangle(20, 50, 0, 15, 0x00ff00).setOrigin(0, 0);
+    this.commitBarBg = this.add.rectangle(20 * uiScale, 50 * uiScale, barWidth, commitBarHeight, 0x222222).setOrigin(0, 0);
+    this.commitBar = this.add.rectangle(20 * uiScale, 50 * uiScale, 0, commitBarHeight, 0x00ff00).setOrigin(0, 0);
     
     // 게이지 라벨
-    this.add.text(230, 25, 'Flow', { 
-      fontSize: '14px', 
+    this.add.text((20 + barWidth + 10) * uiScale, (20 + barHeight/2) * uiScale, 'Flow', { 
+      fontSize: `${fontSize}px`, 
       color: '#ffffff' 
     });
     
-    this.add.text(230, 55, 'Commit', { 
-      fontSize: '14px', 
+    this.add.text((20 + barWidth + 10) * uiScale, (50 + commitBarHeight/2) * uiScale, 'Commit', { 
+      fontSize: `${fontSize}px`, 
       color: '#ffffff' 
     });
     
     // 플레이어 수 표시
-    this.add.text(20, 80, 'Players: 0', { 
-      fontSize: '16px', 
+    this.add.text(20 * uiScale, 80 * uiScale, 'Players: 0', { 
+      fontSize: `${fontSize + 2}px`, 
       color: '#ffffff' 
     }).setName('playerCount');
   }
@@ -244,12 +254,16 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupPlayerPositions() {
-    // 4명 플레이어를 하단 한 줄에 배치 (간격 확대)
+    // 화면 크기에 비례하여 플레이어 위치 설정
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
+    
+    // 4명 플레이어를 하단 한 줄에 배치 (화면 크기에 비례)
     const positions = [
-      { x: 200, y: 600 },  // 1번 플레이어
-      { x: 500, y: 600 },  // 2번 플레이어
-      { x: 800, y: 600 },  // 3번 플레이어
-      { x: 1100, y: 600 }  // 4번 플레이어
+      { x: screenWidth * 0.15, y: screenHeight * 0.75 },  // 1번 플레이어
+      { x: screenWidth * 0.35, y: screenHeight * 0.75 },  // 2번 플레이어
+      { x: screenWidth * 0.55, y: screenHeight * 0.75 },  // 3번 플레이어
+      { x: screenWidth * 0.75, y: screenHeight * 0.75 }   // 4번 플레이어
     ];
 
     positions.forEach((pos, index) => {
@@ -269,12 +283,18 @@ export default class GameScene extends Phaser.Scene {
     // 로컬 플레이어의 게이지 업데이트
     const localPlayer = gameState.players.find(p => p.socketId === this.localPlayerId);
     if (localPlayer) {
+      // UI 스케일 팩터 계산
+      const screenWidth = this.scale.width;
+      const screenHeight = this.scale.height;
+      const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
+      const barWidth = 200 * uiScale;
+      
       // 몰입 게이지 (Flow Gauge) 업데이트
       this.focusGaugeValue = localPlayer.flowGauge || 100;
-      this.focusBar.width = (this.focusGaugeValue / 100) * 200;
+      this.focusBar.width = (this.focusGaugeValue / 100) * barWidth;
       
       // 커밋 게이지 (Commit Gauge) 업데이트
-      const commitGaugePercent = (localPlayer.commitGauge / 100) * 200;
+      const commitGaugePercent = (localPlayer.commitGauge / 100) * barWidth;
       this.commitBar.width = commitGaugePercent;
       
       console.log(`🎮 Local player gauges - Flow: ${localPlayer.flowGauge}, Commit: ${localPlayer.commitGauge}, Commits: ${localPlayer.commitCount}`);
@@ -313,8 +333,8 @@ export default class GameScene extends Phaser.Scene {
       .setDepth(1);
     
     // Chair 배치 (가장 앞)
-    const chair = this.add.image(position.x, position.y + 80, 'chair')
-      .setScale(0.5)
+    const chair = this.add.image(position.x, position.y + 120, 'chair')
+      .setScale(0.6)
       .setDepth(3);
     
     // Player 배치 (중간)

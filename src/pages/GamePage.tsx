@@ -9,10 +9,16 @@ const GamePage = () => {
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
+      // 화면 크기에 비례하여 게임 크기 설정
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const gameWidth = Math.min(screenWidth * 0.9, 1200); // 최대 1200px
+      const gameHeight = Math.min(screenHeight * 0.9, 800); // 최대 800px
+
       const config: Phaser.Types.Core.GameConfig = {
         type: Phaser.AUTO,
-        width: 1200,  // 800에서 1200으로 확대
-        height: 800,  // 600에서 800으로 확대
+        width: gameWidth,
+        height: gameHeight,
         parent: gameContainer.current,
         scene: [GameScene],
         physics: {
@@ -22,6 +28,10 @@ const GamePage = () => {
           },
         },
         backgroundColor: '#000000',
+        scale: {
+          mode: Phaser.Scale.RESIZE,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
       };
       gameInstance.current = new Phaser.Game(config);
     }
