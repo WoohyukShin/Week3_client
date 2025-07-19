@@ -1,5 +1,5 @@
 // src/pages/LobbyPage.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import socketService from '../services/socket';
 import { getRanking } from '../services/api';
@@ -15,54 +15,81 @@ const LobbyPage = () => {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [showRanking, setShowRanking] = useState(false);
   const [rankings, setRankings] = useState<Ranking[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const { username } = useAuth();
 
-  // before backend
+  useEffect(() => {
+    // 컴포넌트 마운트 시 소켓 연결
+    socketService.connect();
+    
+    // 소켓 연결 상태 리스너
+    socketService.on('connect', () => {
+      console.log('Connected to server');
+      setError('');
+    });
+
+    socketService.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setError('서버 연결에 실패했습니다.');
+    });
+
+    // 방 생성 성공 리스너
+    socketService.on('roomCreated', (room) => {
+      console.log('Room created:', room);
+      navigate(`/room/${room.roomId}`);
+    });
+
+    // 방 참가 성공 리스너
+    socketService.on('joinedRoom', (room) => {
+      console.log('Joined room:', room);
+      navigate(`/room/${room.roomId}`);
+    });
+
+    // 에러 리스너
+    socketService.on('error', (error) => {
+      console.error('Socket error:', error);
+      setError(error.message || '알 수 없는 오류가 발생했습니다.');
+      setIsLoading(false);
+    });
+
+    return () => {
+      // 컴포넌트 언마운트 시 이벤트 리스너 정리
+      socketService.off('roomCreated');
+      socketService.off('joinedRoom');
+      socketService.off('error');
+    };
+  }, [navigate]);
+
   const handleCreateRoom = () => {
-    if (roomName && username) {
-      navigate(`/room/mock_room_id`);
+    if (!roomName.trim()) {
+      setError('방 이름을 입력해주세요.');
+      return;
     }
+    if (!username) {
+      setError('사용자 이름이 없습니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    socketService.emit('createRoom', { username });
   };
 
   const handleJoinRoom = () => {
-    if (joinRoomId && username) {
-      navigate(`/room/${joinRoomId}`);
+    if (!joinRoomId.trim()) {
+      setError('방 ID를 입력해주세요.');
+      return;
     }
-  };
+    if (!username) {
+      setError('사용자 이름이 없습니다.');
+      return;
+    }
 
-  const handleShowRanking = async () => {
-    if (!showRanking) {
-      // Mock ranking data
-      setRankings([
-        { username: 'player1', score: 100 },
-        { username: 'player2', score: 90 },
-        { username: 'player3', score: 80 },
-      ]);
-    }
-    setShowRanking(!showRanking);
-  };
-  /*
-  const handleCreateRoom = () => {
-    if (roomName && username) {
-      socketService.connect();
-      socketService.emit('createRoom', { username, roomName });
-      // 'roomCreated' 이벤트를 리스닝하여 방으로 이동
-      socketService.on('roomCreated', (room) => {
-        navigate(`/room/${room.roomId}`);
-      });
-    }
-  };
-
-  const handleJoinRoom = () => {
-    if (joinRoomId && username) {
-      socketService.connect();
-      socketService.emit('joinRoom', { username, roomId: joinRoomId });
-      // 'joinedRoom' 이벤트를 리스닝하여 방으로 이동
-      socketService.on('joinedRoom', (room) => {
-        navigate(`/room/${room.roomId}`);
-      });
-    }
+    setIsLoading(true);
+    setError('');
+    socketService.emit('joinRoom', { username, roomId: joinRoomId });
   };
 
   const handleShowRanking = async () => {
@@ -72,11 +99,11 @@ const LobbyPage = () => {
         setRankings(data);
       } catch (error) {
         console.error('Failed to fetch ranking', error);
+        setError('랭킹을 불러오는데 실패했습니다.');
       }
     }
     setShowRanking(!showRanking);
   };
-  */
 
   return (
     <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
@@ -87,6 +114,12 @@ const LobbyPage = () => {
       <h1>Lobby</h1>
       <p>Welcome, {username}!</p>
 
+      {error && (
+        <div style={{ color: 'red', marginBottom: '20px' }}>
+          {error}
+        </div>
+      )}
+
       <div>
         <h2>Create Room</h2>
         <input 
@@ -94,8 +127,11 @@ const LobbyPage = () => {
           placeholder="Room Name" 
           value={roomName} 
           onChange={(e) => setRoomName(e.target.value)} 
+          disabled={isLoading}
         />
-        <button onClick={handleCreateRoom}>Create</button>
+        <button onClick={handleCreateRoom} disabled={isLoading}>
+          {isLoading ? 'Creating...' : 'Create'}
+        </button>
       </div>
 
       <div>
@@ -105,8 +141,11 @@ const LobbyPage = () => {
           placeholder="Room ID" 
           value={joinRoomId} 
           onChange={(e) => setJoinRoomId(e.target.value)} 
+          disabled={isLoading}
         />
-        <button onClick={handleJoinRoom}>Join</button>
+        <button onClick={handleJoinRoom} disabled={isLoading}>
+          {isLoading ? 'Joining...' : 'Join'}
+        </button>
       </div>
 
       {showRanking && (

@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import socketService from '../services/socket';
 import { useAuth } from '../contexts/AuthContext';
 
-// 임시 타입 정의
 interface Player {
   socketId: string;
   username: string;
@@ -14,84 +13,165 @@ interface RoomState {
   roomId: string;
   hostId: string;
   players: Player[];
+  isGameStarted: boolean;
 }
 
 const RoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const [roomState, setRoomState] = useState<RoomState | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const { username } = useAuth();
   const navigate = useNavigate();
-  const isHost = true; // roomState?.hostId === socketService.socket?.id;
 
-  // before backend
   useEffect(() => {
-    // Mock room state
-    setRoomState({
-      roomId: roomId!,
-      hostId: 'mock_host_id',
-      players: [
-        { socketId: 'mock_host_id', username: username || 'Host' },
-        { socketId: 'mock_player_id', username: 'Player 2' },
-      ],
-    });
-  }, [roomId, username]);
+    if (!roomId) {
+      setError('방 ID가 없습니다.');
+      return;
+    }
 
-  const handleStartGame = () => {
-    navigate(`/game/${roomId}`);
-  };
-  /*
-  useEffect(() => {
+    // 소켓 연결 확인
+    if (!socketService.socket?.connected) {
+      socketService.connect();
+    }
+
     // 방 상태 업데이트 리스너
-    socketService.on('roomStateUpdate', (newRoomState: RoomState) => {
+    socketService.on('roomState', (newRoomState: RoomState) => {
+      console.log('Room state updated:', newRoomState);
       setRoomState(newRoomState);
+      setIsLoading(false);
     });
 
     // 다른 플레이어가 참가했을 때
     socketService.on('playerJoined', (newRoomState: RoomState) => {
+      console.log('Player joined:', newRoomState);
       setRoomState(newRoomState);
     });
 
     // 다른 플레이어가 나갔을 때
-    socketService.on('playerLeft', (newRoomState: RoomState) => {
-      setRoomState(newRoomState);
+    socketService.on('playerLeft', (data: any) => {
+      console.log('Player left:', data);
+          // 방 상태 다시 요청
+    socketService.emit('getRoomState', {});
     });
 
     // 게임 시작 신호를 받으면 게임 페이지로 이동
-    socketService.on('gameStarted', () => {
+    socketService.on('gameStarted', (roomState: RoomState) => {
+      console.log('Game started:', roomState);
       navigate(`/game/${roomId}`);
     });
 
-    // 컴포넌트 언마운트 시 현재 방 상태 요청 또는 정리 로직 추가 가능
-    // socketService.emit('getRoomState', roomId);
+    // 에러 리스너
+    socketService.on('error', (error) => {
+      console.error('Room error:', error);
+      setError(error.message || '방에서 오류가 발생했습니다.');
+    });
+
+    // 방 상태 요청
+    socketService.emit('getRoomState', {});
 
     return () => {
       // 이벤트 리스너 정리
+      socketService.off('roomState');
+      socketService.off('playerJoined');
+      socketService.off('playerLeft');
+      socketService.off('gameStarted');
+      socketService.off('error');
     };
   }, [roomId, navigate]);
 
   const handleStartGame = () => {
-    if (isHost) {
-      socketService.emit('startGame', { roomId });
+    if (!roomState) return;
+    
+    const isHost = roomState.hostId === socketService.socket?.id;
+    if (isHost && !roomState.isGameStarted) {
+      socketService.emit('startGame', {});
     }
   };
-  */
+
+  const handleLeaveRoom = () => {
+    // 소켓 연결 해제 (서버에서 자동으로 방에서 제거됨)
+    socketService.disconnect();
+    navigate('/');
+  };
+
+  if (isLoading) {
+    return <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>Loading room...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
+        <div style={{ color: 'red', marginBottom: '20px' }}>{error}</div>
+        <button onClick={() => navigate('/')}>Back to Lobby</button>
+      </div>
+    );
+  }
 
   if (!roomState) {
-    return <div>Loading room...</div>;
+    return (
+      <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
+        <div>방을 찾을 수 없습니다.</div>
+        <button onClick={() => navigate('/')}>Back to Lobby</button>
+      </div>
+    );
   }
+
+  const isHost = roomState.hostId === socketService.socket?.id;
 
   return (
     <div style={{ color: 'white', textAlign: 'center', paddingTop: '50px' }}>
       <h1>Room: {roomState.roomId}</h1>
-      <h2>Players:</h2>
-      <ul>
-        {roomState.players.map((player) => (
-          <li key={player.socketId}>
-            {player.username} {player.socketId === roomState.hostId ? '(Host)' : ''}
-          </li>
-        ))}
-      </ul>
-      {isHost && <button onClick={handleStartGame}>Start Game</button>}
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h2>Players ({roomState.players.length})</h2>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {roomState.players.map((player) => (
+            <li key={player.socketId} style={{ margin: '5px 0' }}>
+              {player.username} {player.socketId === roomState.hostId ? '👑 (Host)' : ''}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        {isHost && !roomState.isGameStarted && (
+          <button 
+            onClick={handleStartGame}
+            style={{ 
+              padding: '10px 20px', 
+              fontSize: '16px', 
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            Start Game
+          </button>
+        )}
+        
+        {roomState.isGameStarted && (
+          <div style={{ color: '#FFD700' }}>
+            🎮 Game is starting...
+          </div>
+        )}
+      </div>
+
+      <button 
+        onClick={handleLeaveRoom}
+        style={{ 
+          padding: '8px 16px', 
+          backgroundColor: '#f44336',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer'
+        }}
+      >
+        Leave Room
+      </button>
     </div>
   );
 };
