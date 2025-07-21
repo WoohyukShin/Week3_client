@@ -12,22 +12,31 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
-    port: 5173,
-    host: true,
     proxy: {
+      // 로컬 개발용 (주석 해제 시 사용)
+      // '/api': {
+      //   target: 'http://localhost:3001',
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
+      // '/socket.io': {
+      //   target: 'http://localhost:3001',
+      //   ws: true,
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
+      // Railway 배포 서버용 (아래 target을 실제 배포 주소로 맞추세요)
       '/api': {
         target: 'https://week3server-production.up.railway.app',
         changeOrigin: true,
-        secure: true,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log(`🚀 Proxy Request: ${req.method} ${req.url}`);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log(`✅ Proxy Response: ${req.method} ${req.url} - ${proxyRes.statusCode}`);
-          });
-        }
-      }
-    }
+        secure: false,
+      },
+      '/socket.io': {
+        target: 'https://week3server-production.up.railway.app',
+        ws: true,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 })
