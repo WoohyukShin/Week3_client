@@ -3,26 +3,26 @@ export const SKILL_INFO = {
   bumpercar: {
     name: '노래',
     description: '최강 1분반 운영진 이승민의 불후의 명곡 "범퍼카"를 불러 모든 플레이어의 코드에 에러를 발생시킵니다.',
-    image: require('../assets/img/bumpercar.png'),
+    image: require('../assets/img/bumpercar_icon.png'),
   },
   coffee: {
     name: '커피',
     description: '커피를 마셔 각성합니다. 5초간 몰입 게이지가 감소하지 않습니다.',
-    image: require('../assets/img/coffee.png'),
+    image: require('../assets/img/coffee_icon.png'),
   },
   exercise: {
     name: '운동',
     description: '운동에 성공하면 근육량이 오릅니다. 근육량을 최대로 달성하면 게임에서 승리합니다.',
-    image: require('../assets/img/exercise.png'),
+    image: require('../assets/img/exercise_icon.png'),
   },
   shotgun: {
     name: '샷건',
     description: '키보드를 내려쳐 모두를 놀라게 합니다. 운영진을 즉시 등장시킵니다.',
-    image: require('../assets/img/shotgun.png'),
+    image: require('../assets/img/shotgun_icon.png'),
   },
   game: {
     name: '게임',
     description: '게임을 플레이해서 지루함을 해소합니다. Alt+Tab을 통해 빠른 화면 전환이 가능하므로, 운영진이 등장해도 안전합니다.',
-    image: require('../assets/img/game.png'),
+    image: require('../assets/img/game_icon.png'),
   },
 }; 
