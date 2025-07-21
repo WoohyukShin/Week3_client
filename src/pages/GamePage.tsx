@@ -55,18 +55,18 @@ const GamePage = () => {
   useEffect(() => {
     console.log('[DEBUG] GamePage_tsx.useEffect : connecting socket...');
     socket.on('skillAssigned', ({ skill }) => {
-      console.log('[DEBUG] GamePage_tsx.useEffect : skillAssigned:', skill);
+      console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
       setShowSkillModal(true);
       setOkClicked(false);
     });
     socket.on('skillReadyCount', ({ ready, total }) => {
-      console.log('[DEBUG] GamePage_tsx.useEffect : skillReadyCount:', ready, total);
+      console.log('[DEBUG] GamePage_tsx : skillReadyCount:', ready, total);
       setReadyCount(ready);
       setTotalCount(total);
     });
     socket.on('allSkillReady', () => {
-      console.log('[DEBUG] GamePage_tsx.useEffect : allSkillReady');
+      console.log('[DEBUG] GamePage_tsx : allSkillReady');
       setShowSkillModal(false);
     });
     return () => {
