@@ -64,49 +64,50 @@ const LobbyPage = () => {
       <div className="lobby-background" />
 
       <div className="top-bar">
-        <button className="icon-button" onClick={() => navigate('/ranking')}>랭킹 보기</button>
-        <button className="icon-button" onClick={() => logout()}>로그아웃</button>
-      </div>
+  <button className="icon-button" onClick={() => navigate('/ranking')}>랭킹 보기</button>
+  <button className="icon-button" onClick={() => logout()}>로그아웃</button>
+</div>
 
-      <div className="lobby-card">
-        <div className="card-header">
-          <div className="create-room-group">
-            <input
-              type="text"
-              placeholder="방 이름"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              disabled={isLoading}
-              className="lobby-input"
-            />
-            <button onClick={handleCreateRoom} disabled={isLoading} className="lobby-btn">
-              {isLoading ? '...' : '만들기'}
-            </button>
-          </div>
-        </div>
+<div className="lobby-card">
+  <div className="card-header">
+    <div className="create-room-group">
+      <input
+        type="text"
+        placeholder="방 이름"
+        value={roomName}
+        onChange={(e) => setRoomName(e.target.value)}
+        disabled={isLoading}
+        className="lobby-input"
+      />
+      <button onClick={handleCreateRoom} disabled={isLoading} className="lobby-btn">
+        {isLoading ? '...' : '만들기'}
+      </button>
+    </div>
+  </div>
 
-        <div className="card-body">
-          <h1 className="welcome-text">환영합니다, <b>{username}</b>!</h1>
-          {error && <div className="error-text">{error}</div>}
+  <div className="card-body">
+    <h1 className="welcome-text">환영합니다, <b>{username}</b>!</h1>
+    {error && <div className="error-text">{error}</div>}
 
-          <div className="room-list">
-            {rooms.length === 0 ? (
-              <p>아직 생성된 방이 없습니다.</p>
-            ) : (
-              rooms.map((room) => (
-                <div key={room.roomId} className="room-row">
-                  <span>{room.roomName}</span>
-                  <button onClick={() => handleJoinRoom(room.roomId)} className="lobby-btn join">
-                    입장
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="room-list">
+      {rooms.length === 0 ? (
+        <p>아직 생성된 방이 없습니다.</p>
+      ) : (
+        rooms.map((room) => (
+          <div key={room.roomId} className="room-row">
+  <span className="room-name">{room.roomName}</span>
+  <button onClick={() => handleJoinRoom(room.roomId)} className="lobby-btn join">
+    입장
+  </button>
+</div>
+
+        ))
+      )}
+    </div>
+  </div>
+</div>
     </div>
   );
-};
+}
 
 export default LobbyPage;
