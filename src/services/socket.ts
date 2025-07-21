@@ -6,8 +6,9 @@ import { io, Socket } from 'socket.io-client';
 
 // SOCKET_URL
 // const SOCKET_URL = 'http://192.168.35.96:3001'; // 로컬 테스트용
-const SOCKET_URL = 'https://week3server-production.up.railway.app'; // Railway 배포용
+// const SOCKET_URL = 'https://week3server-production.up.railway.app'; // Railway 배포용
 // const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = '/';
 
 
 class SocketService {
