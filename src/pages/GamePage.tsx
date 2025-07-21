@@ -54,21 +54,17 @@ const GamePage = () => {
   // 소켓 연결 및 skill/ready 이벤트 처리
   useEffect(() => {
     console.log('[DEBUG] GamePage_tsx.useEffect : connecting socket...');
-    socket.connect();
-    // 스킬 할당 받으면 모달 띄움
     socket.on('skillAssigned', ({ skill }) => {
       console.log('[DEBUG] GamePage_tsx.useEffect : skillAssigned:', skill);
       setSkillName(skill);
       setShowSkillModal(true);
       setOkClicked(false);
     });
-    // ready 인원수 업데이트
     socket.on('skillReadyCount', ({ ready, total }) => {
       console.log('[DEBUG] GamePage_tsx.useEffect : skillReadyCount:', ready, total);
       setReadyCount(ready);
       setTotalCount(total);
     });
-    // 모든 인원이 OK 누르면 모달 닫기
     socket.on('allSkillReady', () => {
       console.log('[DEBUG] GamePage_tsx.useEffect : allSkillReady');
       setShowSkillModal(false);
