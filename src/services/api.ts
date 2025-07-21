@@ -11,7 +11,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false, // 살려주세요
+  withCredentials: false, // 해치웠나?!?!?!?
 });
 
 // JWT 토큰을 헤더에 추가하는 인터셉터

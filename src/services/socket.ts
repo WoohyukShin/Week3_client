@@ -12,7 +12,7 @@ class SocketService {
   connect(): void {
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
-      withCredentials: true,
+      withCredentials: false,
     });
 
     this.socket.on('connect', () => {
