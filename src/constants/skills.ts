@@ -1,8 +1,8 @@
-import bumpercarImg from '../assets/img/bumpercar.png';
-import coffeeImg from '../assets/img/coffee.png';
-import exerciseImg from '../assets/img/exercise.png';
-import shotgunImg from '../assets/img/shotgun.png';
-import gameImg from '../assets/img/game.png';
+import bumpercarImg from '../assets/img/bumpercar_icon.png';
+import coffeeImg from '../assets/img/coffee_icon.png';
+import exerciseImg from '../assets/img/exercise_icon.png';
+import shotgunImg from '../assets/img/shotgun_icon.png';
+import gameImg from '../assets/img/game_icon.png';
 
 // 스킬 이름 → 설명/이미지 매핑 객체
 export const SKILL_INFO = {
