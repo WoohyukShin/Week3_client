@@ -9,6 +9,7 @@ export default class Player extends Phaser.GameObjects.Sprite {
   public commitGauge: number = 0;
   public flowGauge: number = 100;
   public commitCount: number = 0;
+  public bumpercar: boolean = false;
 
   public skillName: string = ""; // 스킬 이름. 게임 시작 시 서버한테 받음.
   public muscleGauge: number = 0;

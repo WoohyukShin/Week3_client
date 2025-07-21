@@ -35,6 +35,9 @@ export default class GameScene extends Phaser.Scene {
   private commitBarBg!: Phaser.GameObjects.Rectangle;
   private playerPositions: { [key: string]: { x: number; y: number } } = {};
   private managerSprite!: Phaser.GameObjects.Sprite;
+  private managerAppearTimeout: any = null;
+  private isManagerAppearing: boolean = false;
+  private bumpercarAudio: HTMLAudioElement | null = null;
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
   private readonly IMAGE_SCALES = {
@@ -85,6 +88,10 @@ export default class GameScene extends Phaser.Scene {
     this.load.spritesheet('manager', '/src/assets/img/manager.png', {
       frameWidth: 1093/6,
       frameHeight: 228,
+    });
+    this.load.spritesheet('bumpercar', '/src/assets/img/bumpercar.png', {
+      frameWidth: 877/4,
+      frameHeight: 284,
     });
 
     this.load.image('door', '/src/assets/img/door.png');
@@ -166,7 +173,6 @@ export default class GameScene extends Phaser.Scene {
       frameRate: 6,
       repeat: -1
     });
-
     // 춤추기 애니메이션 (pkpk 스프라이트시트)
     this.anims.create({
       key: 'dance',
@@ -174,7 +180,6 @@ export default class GameScene extends Phaser.Scene {
       frameRate: 12,
       repeat: -1
     });
-
     // 운동 애니메이션 (exercise 스프라이트시트)
     this.anims.create({
       key: 'exercise',
@@ -182,13 +187,17 @@ export default class GameScene extends Phaser.Scene {
       frameRate: 8,
       repeat: -1
     });
-
-
-
     // 운영진 등장 애니메이션 (manager 스프라이트시트 사용)
     this.anims.create({
       key: 'manager',
       frames: this.anims.generateFrameNumbers('manager', { start: 0, end: 5 }), 
+      frameRate: 12,
+      repeat: -1
+    });
+    // 범퍼카 재생 애니메이션 (bumpercar 스프라이트시트 사용)
+    this.anims.create({
+      key: 'bumpercar',
+      frames: this.anims.generateFrameNumbers('bumpercar', { start: 0, end: 3 }),
       frameRate: 12,
       repeat: -1
     });
@@ -255,6 +264,49 @@ export default class GameScene extends Phaser.Scene {
       console.log('🏁 Game ended:', data.winner);
       this.handleGameEnd(data.winner);
     });
+
+    socket.on('managerAppeared', () => {
+      if (this.managerAppearTimeout) {
+        clearTimeout(this.managerAppearTimeout);
+      }
+      this.isManagerAppearing = true;
+      this.showManagerAppearAnimation();
+      this.managerAppearTimeout = setTimeout(() => {
+        this.isManagerAppearing = false;
+        this.hideManagerAnimation();
+      }, 600);
+    });
+
+    // 스킬 효과 처리
+    socket.on('skillEffect', (data: { type: string; socketId: string; duration?: number }) => {
+      // 1. bumpercar
+      if (data.type === 'bumpercar') {
+        const player = this.players.get(data.socketId);
+        if (player) {
+          player.bumpercar = true;
+          player.anims.play('bumpercar', true);
+          player.setScale(this.getImageScale('bumpercar'));
+        }
+        const soundIdx = Math.random() < 0.5 ? 1 : 2;
+        const audio = new Audio(`/src/assets/sound/bumpercar_sound${soundIdx}.mp3`);
+        audio.play();
+        this.bumpercarAudio = audio;
+      } else if (data.type === 'bumpercarEnd') {
+        const player = this.players.get(data.socketId);
+        if (player) {
+          player.bumpercar = false;
+          if (player.isAlive) {
+            player.anims.play('coding', true);
+            player.setScale(this.getImageScale('player'));
+          }
+        }
+        if (this.bumpercarAudio) {
+          this.bumpercarAudio.pause();
+          this.bumpercarAudio.currentTime = 0;
+          this.bumpercarAudio = null;
+        }
+      }
+    });
   }
 
   setupInput() {
@@ -262,24 +314,16 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', () => {
       socket.emit('playerAction', { action: 'startDancing' });
     });
-
     this.input.keyboard?.on('keyup-SPACE', () => {
       socket.emit('playerAction', { action: 'stopDancing' });
     });
-
     // P키로 push
     this.input.keyboard?.on('keydown-P', () => {
       socket.emit('playerAction', { action: 'push' });
     });
-
-    // E키로 운동 애니메이션 (테스트용)
-    this.input.keyboard?.on('keydown-E', () => {
-      this.playExerciseAnimation();
-    });
-
-    // M : 운영진 등장 모션 보기
-    this.input.keyboard?.on('keydown-M', () => {
-      this.showManagerAppearAnimation();
+    // Z키로 스킬 사용
+    this.input.keyboard?.on('keydown-Z', () => {
+      socket.emit('skillUse', {});
     });
   }
 
@@ -336,27 +380,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateGameState(gameState: GameState) {
-    // 매니저 등장/사라짐 상태 변경 처리
-    console.log(`🔍 Checking manager state: current=${this.gameState.isManagerAppeared}, new=${gameState.isManagerAppeared}`);
-    if (this.gameState.isManagerAppeared != gameState.isManagerAppeared) {
-      console.log(`🔄 Manager state changed: ${this.gameState.isManagerAppeared} → ${gameState.isManagerAppeared}`);
-      if (gameState.isManagerAppeared) {
-        this.showManagerAppearAnimation();
-      } else {
-        this.hideManagerAnimation();
-      }
-    } else {
-      console.log(`⏸️ Manager state unchanged: ${gameState.isManagerAppeared}`);
-    }
-    
     this.gameState = gameState;
-    
     // 플레이어 수 업데이트
     const playerCountText = this.children.getByName('playerCount') as Phaser.GameObjects.Text;
     if (playerCountText) {
       playerCountText.setText(`Players: ${gameState.players.length}`);
     }
-
     // 로컬 플레이어의 게이지 업데이트
     const localPlayer = gameState.players.find(p => p.socketId === this.localPlayerId);
     if (localPlayer) {
@@ -365,40 +394,25 @@ export default class GameScene extends Phaser.Scene {
       const screenHeight = this.scale.height;
       const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
       const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
-      
       // 몰입 게이지 (Flow Gauge) 업데이트
       const oldFlowGauge = this.focusGaugeValue;
       this.focusGaugeValue = localPlayer.flowGauge || 100;
       this.focusBar.width = (this.focusGaugeValue / 100) * barWidth;
-      
       // 커밋 게이지 (Commit Gauge) 업데이트
       const oldCommitGauge = this.commitBar.width;
       const commitGaugePercent = (localPlayer.commitGauge / 100) * barWidth;
       this.commitBar.width = commitGaugePercent;
-      
       // 게이지 변경 로그 (디버깅용)
       if (oldFlowGauge !== this.focusGaugeValue || oldCommitGauge !== this.commitBar.width) {
         console.log(`📊 [${localPlayer.username}] Flow: ${oldFlowGauge} → ${this.focusGaugeValue}, Commit: ${Math.round(oldCommitGauge)} → ${Math.round(this.commitBar.width)}`);
       }
-      
       // 모든 플레이어의 게이지 상태 로그 (디버깅용)
       console.log(`🎮 GameState received - Manager: ${gameState.isManagerAppeared}, Players: ${gameState.players.length}`);
       gameState.players.forEach(p => {
         console.log(`  👤 [${p.username}] Flow: ${p.flowGauge}, Commit: ${p.commitGauge}, Dancing: ${p.isDancing}, Alive: ${p.isAlive}`);
       });
       console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
-    } else {
-      // localPlayerId가 설정되지 않은 경우, 첫 번째 플레이어를 로컬 플레이어로 임시 설정
-      if (gameState.players.length > 0 && !this.localPlayerId) {
-        this.localPlayerId = gameState.players[0].socketId;
-        console.log(`🔄 Auto-setting localPlayerId to: ${this.localPlayerId} (${gameState.players[0].username})`);
-        // 재귀 호출로 다시 처리
-        this.updateGameState(gameState);
-        return;
-      }
-      console.log(`❌ Local player not found. LocalPlayerId: ${this.localPlayerId}, Available players:`, gameState.players.map(p => p.socketId));
     }
-
     // 플레이어들 업데이트
     gameState.players.forEach(playerData => {
       if (!this.players.has(playerData.socketId)) {
@@ -407,7 +421,6 @@ export default class GameScene extends Phaser.Scene {
         this.updatePlayer(playerData);
       }
     });
-
     // 없는 플레이어들 제거
     const currentPlayerIds = new Set(gameState.players.map(p => p.socketId));
     this.players.forEach((_player, socketId) => {

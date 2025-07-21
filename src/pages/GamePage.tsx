@@ -1,11 +1,20 @@
 // src/pages/GamePage.tsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import GameScene from '../phaser/scenes/GameScene.ts'; // 예시 씬
+import ModalTab from '../components/ModalTab';
+import { SKILL_INFO } from '../constants/skills';
+import socket from '../services/socket';
 
 const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
   const gameInstance = useRef<Phaser.Game | null>(null);
+
+  const [showSkillModal, setShowSkillModal] = useState(false);
+  const [skillName, setSkillName] = useState<string | null>(null);
+  const [readyCount, setReadyCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [okClicked, setOkClicked] = useState(false);
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
@@ -42,12 +51,55 @@ const GamePage = () => {
     };
   }, []);
 
+  // 소켓 연결 및 skill/ready 이벤트 처리
+  useEffect(() => {
+    socket.connect();
+    // 스킬 할당 받으면 모달 띄움
+    socket.on('skillAssigned', ({ skill }) => {
+      setSkillName(skill);
+      setShowSkillModal(true);
+      setOkClicked(false);
+    });
+    // ready 인원수 업데이트
+    socket.on('skillReadyCount', ({ ready, total }) => {
+      setReadyCount(ready);
+      setTotalCount(total);
+    });
+    // 모든 인원이 OK 누르면 모달 닫기
+    socket.on('allSkillReady', () => {
+      setShowSkillModal(false);
+    });
+    return () => {
+      socket.off('skillAssigned');
+      socket.off('skillReadyCount');
+      socket.off('allSkillReady');
+    };
+  }, []);
+
+  // OK 버튼 클릭
+  const handleOk = () => {
+    if (!okClicked) {
+      socket.emit('skillReady', {});
+      setOkClicked(true);
+    }
+  };
+
+  // 스킬 정보
+  const skillInfo = skillName && (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO] ?
+    (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO] : null;
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div ref={gameContainer} />
-      {
-        // 나중에 채팅창 추가?
-      }
+      <ModalTab
+        visible={showSkillModal}
+        title={skillInfo?.name || ''}
+        description={skillInfo?.description || ''}
+        image={skillInfo?.image || ''}
+        okText="OK"
+        onOk={handleOk}
+        countText={`${readyCount} / ${totalCount}`}
+      />
     </div>
   );
 };
