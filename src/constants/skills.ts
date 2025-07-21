@@ -8,7 +8,7 @@ import gameImg from '../assets/img/game_icon.png';
 export const SKILL_INFO = {
   bumpercar: {
     name: '노래',
-    description: '최강 1분반 운영진 이승민의 불후의 명곡 "범퍼카"를 불러 모든 플레이어의 코드에 에러를 발생시킵니다.',
+    description: '최강 1분반 운영진 이승민의 불후의 명곡 "범퍼카"를 불러 모든 플레이어의 몰입을 방해합니다.',
     image: bumpercarImg,
   },
   coffee: {

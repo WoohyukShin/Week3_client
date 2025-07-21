@@ -10,40 +10,34 @@ import './App.css';
 
 function App() {
   return (
-    <>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route 
-          path="/" 
-          element={
-            <PrivateRoute>
-              <LobbyPage />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/room/:roomId" 
-          element={
-            <PrivateRoute>
-              <RoomPage />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/game/:roomId" 
-          element={
-            <PrivateRoute>
-              <GamePage />
-            </PrivateRoute>
-          } 
-        />
-      </Routes>
-
-<Routes>
-  <Route path="/ranking" element={<RankingPage />} />
-</Routes>
-
-    </>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route 
+        path="/" 
+        element={
+          <PrivateRoute>
+            <LobbyPage />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/room/:roomId" 
+        element={
+          <PrivateRoute>
+            <RoomPage />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/game/:roomId" 
+        element={
+          <PrivateRoute>
+            <GamePage />
+          </PrivateRoute>
+        } 
+      />
+      <Route path="/ranking" element={<RankingPage />} />
+    </Routes>
   );
 }
 
