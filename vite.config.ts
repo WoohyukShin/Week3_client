@@ -12,6 +12,7 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
+    host: true,
     proxy: {
       // 로컬 개발용 (주석 해제 시 사용)
       // '/api': {
@@ -25,7 +26,7 @@ export default defineConfig({
       //   changeOrigin: true,
       //   secure: false,
       // },
-      // Railway 배포 서버용 (아래 target을 실제 배포 주소로 맞추세요)
+      // Railway 배포 서버용
       '/api': {
         target: 'https://week3server-production.up.railway.app',
         changeOrigin: true,
