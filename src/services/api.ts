@@ -3,9 +3,9 @@ import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 // API_URL - 프록시 사용
-const API_URL = '/api'; // Vite 프록시 사용
+// const API_URL = '/api'; // Vite 프록시 사용
 // const API_URL = 'http://192.168.35.96:3001/api'; // 로컬 테스트용
-// const API_URL = 'https://week3server-production.up.railway.app/api'; // Railway 배포용
+const API_URL = 'https://week3server-production.up.railway.app/api'; // Railway 배포용
 
 const api = axios.create({
   baseURL: API_URL,
