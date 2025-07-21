@@ -1,0 +1,73 @@
+/* src/pages/StartPage.css */
+.start-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/img/splashbg.webp'); /* Update path if needed */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.content-box {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.slogan {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 3rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.button-wrapper {
+  position: absolute;
+  bottom: 20%;
+  right: 10%;
+}
+
+.start-button {
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  color: yellow;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 10;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+}
+
+@media screen and (max-width: 768px) {
+  .slogan {
+    font-size: 2rem;
+    white-space: normal;
+    padding: 0 1rem;
+  }
+
+  .start-button {
+    font-size: 1.5rem;
+  }
+
+  .button-wrapper {
+    bottom: 15%;
+    right: 8%;
+  }
+}

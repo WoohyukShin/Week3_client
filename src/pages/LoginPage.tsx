@@ -61,7 +61,7 @@ const LoginPage = () => {
       if (isLogin) {
         const { data } = await loginUser({ username, password });
         login(data.token, data.username);
-        navigate('/');
+        navigate('/lobby');
       } else {
         // 회원가입 시 중복확인 검증
         if (usernameStatus && !usernameStatus.available) {
