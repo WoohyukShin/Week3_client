@@ -14,7 +14,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-image: url('/public/img/loginbg.webp');
+  background-image: url('/img/loginbg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

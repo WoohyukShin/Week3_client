@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import StartPage from './pages/StartPage';
 import LoginPage from './pages/LoginPage';
 import LobbyPage from './pages/LobbyPage';
 import RoomPage from './pages/RoomPage';
@@ -6,14 +7,18 @@ import GamePage from './pages/GamePage';
 import RankingPage from './pages/RankingPage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
-// import background from './assets/img/background.png';
 
 function App() {
   return (
     <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<StartPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/ranking" element={<RankingPage />} />
+
+      {/* Protected Routes */}
       <Route 
-        path="/" 
+        path="/lobby" 
         element={
           <PrivateRoute>
             <LobbyPage />
@@ -36,7 +41,6 @@ function App() {
           </PrivateRoute>
         } 
       />
-      <Route path="/ranking" element={<RankingPage />} />
     </Routes>
   );
 }

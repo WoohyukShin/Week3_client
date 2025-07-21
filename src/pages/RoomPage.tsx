@@ -73,18 +73,18 @@ const RoomPage = () => {
 
   const handleLeaveRoom = () => {
     socketService.disconnect();
-    navigate('/');
+    navigate('/lobby');
   };
 
   if (isLoading) {
-    return <div className="room-loading">Loading room...</div>;
+    return <div className="room-loading">방 로딩중...</div>;
   }
 
   if (error) {
     return (
       <div className="room-error">
         <div>{error}</div>
-        <button onClick={() => navigate('/')}>Back to Lobby</button>
+        <button onClick={() => navigate('/')}>로비로 돌아가기</button>
       </div>
     );
   }
@@ -93,7 +93,7 @@ const RoomPage = () => {
     return (
       <div className="room-error">
         <div>방을 찾을 수 없습니다.</div>
-        <button onClick={() => navigate('/')}>Back to Lobby</button>
+        <button onClick={() => navigate('/lobby')}>Back to Lobby</button>
       </div>
     );
   }
@@ -105,9 +105,9 @@ const RoomPage = () => {
       <div className="room-background" />
 
       <div className="room-card">
-        <h1>Room : {roomState.roomId}</h1>
-        <h2>Current Players ({roomState.players.length})</h2>
-        <p>Host is {roomState.players.find(p => p.socketId === roomState.hostId)?.username || 'someone'}</p>
+        <h1>방 코드 : {roomState.roomId}</h1>
+        <h2>입장한 학생들 ({roomState.players.length})</h2>
+        <p>주최자는 {roomState.players.find(p => p.socketId === roomState.hostId)?.username || 'someone'}</p>
 
         <ul className="player-list">
           {roomState.players.map((player) => (
@@ -118,14 +118,14 @@ const RoomPage = () => {
         </ul>
 
         <div className="button-group">
-          <button onClick={handleLeaveRoom} className="room-btn leave-btn">Leave Room</button>
+          <button onClick={handleLeaveRoom} className="room-btn leave-btn">방 나가기</button>
           {isHost && !roomState.isGameStarted && (
-            <button onClick={handleStartGame} className="room-btn start-btn">Start Game</button>
+            <button onClick={handleStartGame} className="room-btn start-btn">게임 시작하기</button>
           )}
         </div>
 
         {roomState.isGameStarted && (
-          <div className="game-starting-text">🎮 Game is starting...</div>
+          <div className="game-starting-text">🎮 게임 시작하는 중...</div>
         )}
       </div>
     </div>
