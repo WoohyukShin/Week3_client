@@ -6,6 +6,7 @@ import ResultModal from '../components/ResultModal';
 interface Props {
   result: 'win' | 'lose';
   commitCount: number;
+  skillName: string;
   gameTime: string;
   onExit: () => void;
 }
