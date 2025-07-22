@@ -1,8 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import 'node:process';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   define: {
@@ -21,10 +19,10 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
             console.log(`🚀 Proxy Request: ${req.method} ${req.url}`);
           });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes, req) => {
             console.log(`✅ Proxy Response: ${req.method} ${req.url} - ${proxyRes.statusCode}`);
           });
         }
