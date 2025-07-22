@@ -32,6 +32,8 @@ const GamePage = () => {
   const [skillUsed, setSkillUsed] = useState('');
   const [gameTime, setGameTime] = useState('00:00');
   const [showResultModal, setShowResultModal] = useState(false);
+  const [gameStateArrived, setGameStateArrived] = useState(false);
+  const gameStartedRef = useRef(false);
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
@@ -125,18 +127,21 @@ const GamePage = () => {
       : null;
 
   useEffect(() => {
-    if (!showSkillModal && gameInstance.current) {
+    // 실제 게임 프레임이 돌기 시작한 뒤에만 bgm play
+    if (!showSkillModal && gameStateArrived && gameInstance.current && !gameStartedRef.current) {
       try {
         const scene = (gameInstance.current.scene.scenes[0] as any);
         if (scene?.bgmAudio && scene.bgmAudio.paused) {
           scene.bgmAudio.currentTime = 0;
           scene.bgmAudio.play().catch(() => {});
+          gameStartedRef.current = true;
         }
       } catch (e) {}
     }
-  }, [showSkillModal]);
+  }, [showSkillModal, gameStateArrived]);
 
   useEffect(() => {
+    // 게임 종료 창이 뜨는 순간 → bgm 정지
     if (showResultModal && gameInstance.current) {
       try {
         const scene = (gameInstance.current.scene.scenes[0] as any);
@@ -147,6 +152,17 @@ const GamePage = () => {
       } catch (e) {}
     }
   }, [showResultModal]);
+
+  // gameStateUpdate가 오면 setGameStateArrived(true)
+  useEffect(() => {
+    const handleGameStateUpdate = () => {
+      setGameStateArrived(true);
+    };
+    socketService.on('gameStateUpdate', handleGameStateUpdate);
+    return () => {
+      socketService.off('gameStateUpdate', handleGameStateUpdate);
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>

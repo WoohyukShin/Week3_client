@@ -21,6 +21,7 @@ interface GameState {
 
 export default class GameScene extends Phaser.Scene {
   private players: Map<string, Player> = new Map();
+  private deskMap: Map<number, Phaser.GameObjects.Sprite> = new Map();
   private localPlayerId: string = '';
   private gameState: GameState = { roomId: '', players: [], isManagerAppeared: false };
   private focusGaugeValue: number = 100;
@@ -72,6 +73,14 @@ export default class GameScene extends Phaser.Scene {
     coffee: 1.0,       // 커피 애니메이션 크기
     shotgun: 1.3,      // 샷건 애니메이션 크기
   };
+
+  private DANCE_BGM_MAP: Record<string, string[]> = {
+    default: [
+      '/src/assets/sound/pkpk.mp3', // 예시: pkpk.mp3 (실제 파일명에 맞게 수정)
+    ],
+    // 추후 danceType별로 추가
+  };
+  private currentDanceAudio: HTMLAudioElement | null = null;
 
   constructor() {
     super('GameScene');
@@ -140,6 +149,7 @@ export default class GameScene extends Phaser.Scene {
     this.isManagerAppearing = false;
     this.bumpercarAudio = null;
     this.playerPositions = {};
+    this.deskMap.clear(); // 초기화
 
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
@@ -363,6 +373,31 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     });
+
+    // 춤별 BGM 재생
+    socketService.on('playDanceBgm', (data: { danceType: string }) => {
+      console.log('[DEBUG] GameScene.ts : playDanceBgm : ', data.danceType);
+      const bgmList = this.DANCE_BGM_MAP[data.danceType] || this.DANCE_BGM_MAP['default'];
+      if (bgmList && bgmList.length > 0) {
+        const bgmPath = bgmList[0];
+        if (this.currentDanceAudio) {
+          this.currentDanceAudio.pause();
+          this.currentDanceAudio.currentTime = 0;
+        }
+        this.currentDanceAudio = new Audio(bgmPath);
+        this.currentDanceAudio.loop = true;
+        this.currentDanceAudio.volume = 1.0;
+        this.currentDanceAudio.play().catch(() => {});
+      }
+    });
+    socketService.on('stopDanceBgm', (data: { danceType: string }) => {
+      console.log('[DEBUG] GameScene.ts : stopDanceBgm : ', data.danceType);
+      if (this.currentDanceAudio) {
+        this.currentDanceAudio.pause();
+        this.currentDanceAudio.currentTime = 0;
+        this.currentDanceAudio = null;
+      }
+    });
   }
 
   setupInput() {
@@ -491,15 +526,7 @@ export default class GameScene extends Phaser.Scene {
     const playerIndex = Array.from(this.players.keys()).length;
     const positions = Object.values(this.playerPositions);
     const position = playerIndex < positions.length ? positions[playerIndex] : { x: 400, y: 300 };
-
-    // Desk 스프라이트 생성 (플레이어별)
-    let deskFrame = 3;
-    if (playerData.playerMotion === 'gaming') {
-      deskFrame = Math.floor(Math.random() * 3);
-    }
-    const deskSprite = this.add.sprite(position.x, position.y + 50 * this.getImageScale('desk'), 'desk', deskFrame)
-      .setScale(this.getImageScale('desk'))
-      .setDepth(1);
+    // deskSprite는 이미 자리별로 생성되어 있으므로 따로 생성하지 않음
 
     // Player 배치 (중간)
     const player = new Player(
@@ -513,8 +540,6 @@ export default class GameScene extends Phaser.Scene {
     player.setScale(this.getImageScale('player')).setDepth(2);
     player.isAlive = playerData.isAlive;
     player.playerMotion = playerData.playerMotion;
-    // deskSprite를 player 객체에 저장
-    (player as any).deskSprite = deskSprite;
     this.applyPlayerMotion(player, playerData.playerMotion);
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
@@ -552,8 +577,9 @@ export default class GameScene extends Phaser.Scene {
       this.applyPlayerMotion(player, playerData.playerMotion);
       player.playerMotion = playerData.playerMotion;
     }
-    // deskSprite 프레임 업데이트
-    const deskSprite = (player as any).deskSprite;
+    // 자리 인덱스 계산
+    const playerIndex = Array.from(this.players.keys()).indexOf(playerData.socketId);
+    const deskSprite = this.deskMap.get(playerIndex);
     if (deskSprite) {
       let deskFrame = 3;
       if (playerData.playerMotion === 'gaming') {
@@ -622,6 +648,7 @@ export default class GameScene extends Phaser.Scene {
       if (nameText) {
         nameText.destroy();
       }
+      // deskSprite는 이미 자리별로 생성되어 있으므로 따로 삭제하지 않음
       
       player.destroy();
       this.players.delete(socketId);
