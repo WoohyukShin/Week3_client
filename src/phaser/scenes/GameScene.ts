@@ -430,14 +430,14 @@ export default class GameScene extends Phaser.Scene {
   setupInput() {
     // 춤추기 (스페이스바)
     this.input.keyboard?.on('keydown-SPACE', () => {
-      socketService.emit('playerAction', { action: 'startDancing' });
+      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
+      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
+      socketService.emit('playerAction', { action: 'startDancing', payload: { danceType: randomDanceType } });
     });
     this.input.keyboard?.on('keyup-SPACE', () => {
-      socketService.emit('playerAction', { action: 'stopDancing' });
-    });
-    // P키로 push
-    this.input.keyboard?.on('keydown-P', () => {
-      socketService.emit('playerAction', { action: 'push' });
+      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
+      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
+      socketService.emit('playerAction', { action: 'stopDancing', payload: { danceType: randomDanceType } });
     });
     // Z키로 스킬 사용
     this.input.keyboard?.on('keydown-Z', () => {
@@ -625,7 +625,7 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     switch (motion) {
-      case 'dancing':
+      case 'pkpk':
         player.anims.play('dance', true);
         player.setScale(this.getImageScale('pkpk'));
         break;
@@ -692,7 +692,7 @@ export default class GameScene extends Phaser.Scene {
 
     switch (data.action) {
       case 'startDancing':
-        player.playerMotion = 'dancing';
+        player.playerMotion = data.payload?.danceType || 'coding'; // 춤 이름 설정
         break;
       case 'stopDancing':
         player.playerMotion = 'coding';
@@ -804,7 +804,7 @@ export default class GameScene extends Phaser.Scene {
       
       // 3초 후에 원래 상태로 복귀 (단, 춤추고 있지 않을 때만)
       this.time.delayedCall(3000, () => {
-        if (localPlayer && localPlayer.playerMotion !== 'dancing') {
+        if (localPlayer && localPlayer.playerMotion !== 'pkpk') { // pkpk 춤 제외
           localPlayer.playerMotion = 'coding';
           localPlayer.anims.play('coding', true);
           localPlayer.setScale(this.getImageScale('player'));
