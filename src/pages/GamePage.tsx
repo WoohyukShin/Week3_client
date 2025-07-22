@@ -57,10 +57,6 @@ const GamePage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    socketService.emit('gameReady', {});
-  }, []);
-
-  useEffect(() => {
     const handleSkillAssigned = ({ skill }: any) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
@@ -87,8 +83,13 @@ const GamePage = () => {
   }, []);
 
   useEffect(() => {
-    console.log('[DEBUG] GamePage_tsx.useEffect : showSkillModal:', showSkillModal, 'skillName:', skillName);
+    console.log('[DEBUG] GamePage.tsx : showSkillModal:', showSkillModal, 'skillName:', skillName);
   }, [showSkillModal, skillName]);
+
+  useEffect(() => {
+    console.log('[DEBUG] GamePage.tsx : gameReady 신호 보냄...');
+    socketService.emit('gameReady', {});
+  }, []);
 
   // OK 버튼 클릭
   const handleOk = () => {
