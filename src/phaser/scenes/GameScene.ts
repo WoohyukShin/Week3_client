@@ -408,14 +408,17 @@ export default class GameScene extends Phaser.Scene {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-      
-      // Desk 배치 (가장 뒤) - 새로운 스케일 시스템 적용
-      this.add.image(position.x, position.y + 50 * scaleFactor, 'desk')
+      // 책상은 기존보다 위로 20px 이동
+      const deskY = position.y + 50 * scaleFactor - 20;
+      // 의자는 기존보다 아래로 20px 이동
+      const chairY = position.y + 120 * scaleFactor + 20;
+      // Desk 스프라이트 생성 (플레이어별)
+      const deskFrame = 3;
+      const deskSprite = this.add.sprite(position.x, deskY, 'desk', deskFrame)
         .setScale(this.getImageScale('desk'))
         .setDepth(1);
-      
-      // Chair 배치 (가장 앞) - 새로운 스케일 시스템 적용
-      this.add.image(position.x, position.y + 120 * scaleFactor, 'chair')
+      // Chair 배치
+      this.add.image(position.x, chairY, 'chair')
         .setScale(this.getImageScale('chair'))
         .setDepth(3);
     });

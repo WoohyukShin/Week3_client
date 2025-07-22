@@ -124,6 +124,30 @@ const GamePage = () => {
       ? (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO]
       : null;
 
+  useEffect(() => {
+    if (!showSkillModal && gameInstance.current) {
+      try {
+        const scene = (gameInstance.current.scene.scenes[0] as any);
+        if (scene?.bgmAudio && scene.bgmAudio.paused) {
+          scene.bgmAudio.currentTime = 0;
+          scene.bgmAudio.play().catch(() => {});
+        }
+      } catch (e) {}
+    }
+  }, [showSkillModal]);
+
+  useEffect(() => {
+    if (showResultModal && gameInstance.current) {
+      try {
+        const scene = (gameInstance.current.scene.scenes[0] as any);
+        if (scene?.bgmAudio && !scene.bgmAudio.paused) {
+          scene.bgmAudio.pause();
+          scene.bgmAudio.currentTime = 0;
+        }
+      } catch (e) {}
+    }
+  }, [showResultModal]);
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>
       <ModalTab
