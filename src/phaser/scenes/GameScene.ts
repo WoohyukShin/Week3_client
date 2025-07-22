@@ -99,6 +99,16 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // 모든 상태를 완전히 새로 초기화
+    this.players = new Map();
+    this.localPlayerId = '';
+    this.gameState = { roomId: '', players: [], isManagerAppeared: false };
+    this.focusGaugeValue = 100;
+    this.managerAppearTimeout = null;
+    this.isManagerAppearing = false;
+    this.bumpercarAudio = null;
+    this.playerPositions = {};
+
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
       .setDisplaySize(this.scale.width, this.scale.height);
@@ -204,6 +214,21 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupSocketListeners() {
+    // 기존 리스너 모두 해제
+    socketService.off('gameStateUpdate');
+    socketService.off('playerJoined');
+    socketService.off('playerLeft');
+    socketService.off('playerAction');
+    socketService.off('setLocalPlayer');
+    socketService.off('playerDied');
+    socketService.off('commitSuccess');
+    socketService.off('pushStarted');
+    socketService.off('pushFailed');
+    socketService.off('gameEnded');
+    socketService.off('managerAppeared');
+    socketService.off('skillEffect');
+    // 이후 새로 등록
+
     // 게임 상태 업데이트
     socketService.on('gameStateUpdate', (gameState: GameState) => {
       console.log('GameState Update:', gameState);
@@ -275,7 +300,9 @@ export default class GameScene extends Phaser.Scene {
     // 스킬 효과 처리
     socketService.on('skillEffect', (data: { type: string; socketId: string; duration?: number }) => {
       // 1. bumpercar
+      console.log('[DEBUG] GameScene.ts : skillEffect received', data.type);
       if (data.type === 'bumpercar') {
+        console.log('[DEBUG] GameScene.ts : bumpercar skillEffect received', data.socketId);
         const player = this.players.get(data.socketId);
         if (player) {
           player.bumpercar = true;
@@ -318,6 +345,7 @@ export default class GameScene extends Phaser.Scene {
     });
     // Z키로 스킬 사용
     this.input.keyboard?.on('keydown-Z', () => {
+      console.log("[DEBUG] GameScene.ts : skill used!!");
       socketService.emit('skillUse', {});
     });
   }
