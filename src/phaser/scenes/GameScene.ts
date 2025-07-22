@@ -31,6 +31,14 @@ export default class GameScene extends Phaser.Scene {
   private managerAppearTimeout: any = null;
   private isManagerAppearing: boolean = false;
   private bumpercarAudio: HTMLAudioElement | null = null;
+  private bgmAudio: HTMLAudioElement | null = null;
+  private SFX_MAP: Record<string, string[] | (() => string)> = {
+    bumpercar: [
+      '/src/assets/sound/bumpercar_sound1.mp3',
+      '/src/assets/sound/bumpercar_sound2.mp3',
+    ],
+    // 추후 다른 스킬도 여기에 추가
+  };
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
   private readonly IMAGE_SCALES = {
@@ -42,9 +50,9 @@ export default class GameScene extends Phaser.Scene {
     player: 1.0,      // 플레이어 기본 크기
     'death-image': 0.7, // 사망 이미지 크기
     door: 1.2,        // 문 이미지 크기
-    manager: 1.0,      // 매니저 애니메이션 크기
-    coffee: 1.0,       // 커피 애니메이션 크기
-    shotgun: 1.0,      // 샷건 애니메이션 크기
+    manager: 1.3,      // 매니저 애니메이션 크기
+    coffee: 1.2,       // 커피 애니메이션 크기
+    shotgun: 1.3,      // 샷건 애니메이션 크기
   };
 
   constructor() {
@@ -139,6 +147,25 @@ export default class GameScene extends Phaser.Scene {
     
     // 게임 상태 요청
     socketService.emit('getGameState', {});
+
+    // 배경음악 반복 재생
+    this.bgmAudio = new Audio('/src/assets/sound/bgm.mp3');
+    this.bgmAudio.loop = true;
+    this.bgmAudio.volume = 0.5;
+    this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
+  }
+
+  // destroy 시 배경음악 정지
+  shutdown() {
+    if (this.bgmAudio) {
+      this.bgmAudio.pause();
+      this.bgmAudio.currentTime = 0;
+      this.bgmAudio = null;
+    }
+  }
+  destroy() {
+    this.shutdown();
+    // super.destroy(); // Phaser.Scene에는 destroy() 없음
   }
 
   setupUI() {
@@ -300,6 +327,25 @@ export default class GameScene extends Phaser.Scene {
         this.isManagerAppearing = false;
         this.hideManagerAnimation();
       }, 600);
+    });
+
+    // 스킬 SFX 재생 이벤트
+    socketService.on('playSkillSfx', (data: { type: string }) => {
+      const sfxList = this.SFX_MAP[data.type];
+      if (sfxList) {
+        let sfxPath = '';
+        if (Array.isArray(sfxList)) {
+          // 랜덤 선택
+          sfxPath = sfxList[Math.floor(Math.random() * sfxList.length)];
+        } else if (typeof sfxList === 'function') {
+          sfxPath = sfxList();
+        }
+        if (sfxPath) {
+          const audio = new Audio(sfxPath);
+          audio.volume = 1.0;
+          audio.play();
+        }
+      }
     });
   }
 
