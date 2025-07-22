@@ -9,6 +9,7 @@ import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 import { useEffect } from 'react';
 import socketService from './services/socket';
+import TestModalPage from './pages/TestModalPage';
 
 function App() {
   useEffect(() => {
@@ -17,38 +18,41 @@ function App() {
     }
   }, []);
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<StartPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/ranking" element={<RankingPage />} />
+<Routes>
+  <>
+    {/* Public Routes */}
+    <Route path="/" element={<StartPage />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/ranking" element={<RankingPage />} />
 
-      {/* Protected Routes */}
-      <Route 
-        path="/lobby" 
-        element={
-          <PrivateRoute>
-            <LobbyPage />
-          </PrivateRoute>
-        } 
-      />
-      <Route 
-        path="/room/:roomId" 
-        element={
-          <PrivateRoute>
-            <RoomPage />
-          </PrivateRoute>
-        } 
-      />
-      <Route 
-        path="/game/:roomId" 
-        element={
-          <PrivateRoute>
-            <GamePage />
-          </PrivateRoute>
-        } 
-      />
-    </Routes>
+    {/* Protected Routes */}
+    <Route 
+      path="/lobby" 
+      element={
+        <PrivateRoute>
+          <LobbyPage />
+        </PrivateRoute>
+      } 
+    />
+    <Route 
+      path="/room/:roomId" 
+      element={
+        <PrivateRoute>
+          <RoomPage />
+        </PrivateRoute>
+      } 
+    />
+    <Route 
+      path="/game/:roomId" 
+      element={
+        <PrivateRoute>
+          <GamePage />
+        </PrivateRoute>
+      } 
+    />
+    <Route path="/test-modal" element={<TestModalPage />} />
+  </>
+</Routes>
   );
 }
 

@@ -113,6 +113,7 @@ const GamePage = () => {
         okText="OK"
         onOk={handleOk}
         countText={`${readyCount} / ${totalCount}`}
+        skillName={skillName || undefined}
       />
     </div>
   );
