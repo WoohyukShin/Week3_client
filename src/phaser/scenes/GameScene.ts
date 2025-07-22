@@ -481,7 +481,7 @@ export default class GameScene extends Phaser.Scene {
 
   updatePlayer(playerData: GamePlayer) {
     const player = this.players.get(playerData.socketId);
-    if (!player) return;
+    if (!player || !player.scene || !player.texture || typeof player.setTexture !== 'function') return;
 
     const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
     if (commitText) {
@@ -491,16 +491,20 @@ export default class GameScene extends Phaser.Scene {
     if (!playerData.isAlive) {
       if (player.isAlive) {
         player.isAlive = false;
-        player.setTexture('death-image');
-        player.setScale(this.getImageScale('death-image'));
+        if (player.scene && player.texture && typeof player.setTexture === 'function') {
+          player.setTexture('death-image');
+          player.setScale(this.getImageScale('death-image'));
+        }
         console.log(`💀 Player ${playerData.username} died`);
       }
       player.anims.stop();
       return;
     } else if (playerData.isAlive && !player.isAlive) {
       player.isAlive = true;
-      player.setTexture('coding');
-      player.setScale(this.getImageScale('player'));
+      if (player.scene && player.texture && typeof player.setTexture === 'function') {
+        player.setTexture('coding');
+        player.setScale(this.getImageScale('player'));
+      }
       console.log(`🔄 Player ${playerData.username} revived`);
     }
 

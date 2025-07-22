@@ -48,7 +48,8 @@ const RoomPage = () => {
     });
 
     socketService.on('gameStart', () => {
-      navigate(`/game/${roomId}`);
+      // totalCount를 함께 넘김
+      navigate(`/game/${roomId}`, { state: { totalCount: roomState?.players.length || 0 } });
     });
 
     socketService.on('error', (error: any) => {

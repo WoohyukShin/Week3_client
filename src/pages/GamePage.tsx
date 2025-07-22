@@ -1,6 +1,6 @@
 // src/pages/GamePage.tsx
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Phaser from 'phaser';
 import GameScene from '../phaser/scenes/GameScene.ts';
 import ModalTab from '../components/ModalTab';
@@ -15,11 +15,13 @@ const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
   const gameInstance = useRef<Phaser.Game | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const initialTotalCount = location.state?.totalCount || 0;
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [skillName, setSkillName] = useState<string | null>(null);
   const [readyCount, setReadyCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [okClicked, setOkClicked] = useState(false);
 
   useEffect(() => {
@@ -120,7 +122,15 @@ const GamePage = () => {
         onOk={handleOk}
         countText={`${readyCount} / ${totalCount}`}
         skillName={skillName || undefined}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 10 }}
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 400,
+          zIndex: 10,
+          pointerEvents: 'auto',
+        }}
       />
       <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
     </div>
