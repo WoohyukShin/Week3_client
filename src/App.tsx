@@ -10,6 +10,7 @@ import './App.css';
 import { useEffect } from 'react';
 import socketService from './services/socket';
 import TestModalPage from './pages/TestModalPage';
+import TestResultModalPage from './pages/TestResultModalPage';
 
 function App() {
   useEffect(() => {
@@ -51,6 +52,17 @@ function App() {
       } 
     />
     <Route path="/test-modal" element={<TestModalPage />} />
+    <Route
+      path="/test-result"
+      element={
+        <TestResultModalPage
+          result="win" // TODO: Replace with actual result data
+          commitCount={0} // TODO: Replace with actual commit count
+          gameTime={"0"} // TODO: Replace with actual game time
+          onExit={() => {}} // TODO: Replace with actual exit handler
+        />
+      }
+    />
   </>
 </Routes>
   );

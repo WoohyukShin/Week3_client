@@ -5,6 +5,7 @@ import Phaser from 'phaser';
 import GameScene from '../phaser/scenes/GameScene.ts';
 import ModalTab from '../components/ModalTab';
 import { SKILL_INFO } from '../constants/skills';
+import ResultModal from '../components/ResultModal';
 import socketService from '../services/socket';
 import './GamePage.css';
 
@@ -23,6 +24,11 @@ const GamePage = () => {
   const [readyCount, setReadyCount] = useState(0);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [okClicked, setOkClicked] = useState(false);
+
+const [result, setResult] = useState<'win' | 'lose' | null>(null);
+const [commitCount, setCommitCount] = useState(0);
+const [skillUsed, setSkillUsed] = useState('');
+const [gameTime, setGameTime] = useState('00:00');
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
@@ -44,10 +50,19 @@ const GamePage = () => {
     }
 
     // 게임 종료 시 로비로 이동
-    const handleGameEnded = (data: any) => {
-      console.log('👋 게임 종료!', data);
-      navigate('/lobby');
-    };
+    const handleGameEnded = (data: {
+  winnerSocketId: string;
+  commitCount: number;
+  skill: string;
+  time: string;
+}) => {
+  const isWinner = data.winnerSocketId === socketService.socket?.id;
+  setResult(isWinner ? 'win' : 'lose');
+  setCommitCount(data.commitCount);
+  setSkillUsed(data.skill);
+  setGameTime(data.time);
+};
+
 
     socketService.on('gameEnded', handleGameEnded);
 
@@ -133,7 +148,15 @@ const GamePage = () => {
         }}
       />
       <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
-    </div>
+      {result && (
+  <ResultModal
+    result={result}
+    commitCount={commitCount}
+    skillName={skillUsed}
+    timeTaken={gameTime}
+    onExit={() => navigate('/lobby')}
+  />
+)}   </div>
   );
 };
 
