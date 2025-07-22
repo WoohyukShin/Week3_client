@@ -63,13 +63,13 @@ export default class GameScene extends Phaser.Scene {
     coding: 1.0,      // 코딩 애니메이션 크기
     exercise: 1.2,    // 운동 애니메이션 크기
     pkpk: 1.5,      // pkpk 애니메이션 크기
-    desk: 1.0,        // 책상 크기
-    chair: 0.5,       // 의자 크기
+    desk: 1.4,        // 책상 크기
+    chair: 0.4,       // 의자 크기
     player: 1.0,      // 플레이어 기본 크기
     'death-image': 0.7, // 사망 이미지 크기
-    door: 1.2,        // 문 이미지 크기
-    manager: 1.3,      // 매니저 애니메이션 크기
-    coffee: 1.2,       // 커피 애니메이션 크기
+    door: 1.6,        // 문 이미지 크기
+    manager: 1.4,      // 매니저 애니메이션 크기
+    coffee: 1.0,       // 커피 애니메이션 크기
     shotgun: 1.3,      // 샷건 애니메이션 크기
   };
 
