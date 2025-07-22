@@ -57,6 +57,11 @@ const GamePage = () => {
   }, [navigate]);
 
   useEffect(() => {
+    // 게임 페이지 진입 시 서버에 현재 상태 요청
+    socketService.emit('getGameState', {});
+  }, []);
+
+  useEffect(() => {
     const handleSkillAssigned = ({ skill }: any) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
@@ -104,8 +109,8 @@ const GamePage = () => {
     (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO] : null;
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div ref={gameContainer} />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>
+      {/* ModalTab을 게임 스크린 위에 겹쳐서 띄움 */}
       <ModalTab
         visible={showSkillModal}
         title={skillInfo?.name || ''}
@@ -115,7 +120,9 @@ const GamePage = () => {
         onOk={handleOk}
         countText={`${readyCount} / ${totalCount}`}
         skillName={skillName || undefined}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 10 }}
       />
+      <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
     </div>
   );
 };
