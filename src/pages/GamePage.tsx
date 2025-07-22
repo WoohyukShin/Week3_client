@@ -9,8 +9,8 @@ import ResultModal from '../components/ResultModal';
 import socketService from '../services/socket';
 import './GamePage.css';
 
-const gameWidth = 800;
-const gameHeight = 600;
+const gameWidth = 1200;
+const gameHeight = 800;
 
 const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
@@ -33,6 +33,8 @@ const [skillName, setSkillName] = useState<SkillKey | null>(null);
   const [skillUsed, setSkillUsed] = useState('');
   const [gameTime, setGameTime] = useState('00:00');
   const [showResultModal, setShowResultModal] = useState(false);
+  const [gameStateArrived, setGameStateArrived] = useState(false);
+  const gameStartedRef = useRef(false);
 
   const [isCooldown, setIsCooldown] = useState(false);
   const [cooldownTime, setCooldownTime] = useState<number>(0);
@@ -152,6 +154,44 @@ const [skillName, setSkillName] = useState<SkillKey | null>(null);
   };
 
   const skillInfo = skillName ? SKILL_INFO[skillName as keyof typeof SKILL_INFO] : null;
+
+  useEffect(() => {
+    // 실제 게임 프레임이 돌기 시작한 뒤에만 bgm play
+    if (!showSkillModal && gameStateArrived && gameInstance.current && !gameStartedRef.current) {
+      try {
+        const scene = (gameInstance.current.scene.scenes[0] as any);
+        if (scene?.bgmAudio && scene.bgmAudio.paused) {
+          scene.bgmAudio.currentTime = 0;
+          scene.bgmAudio.play().catch(() => {});
+          gameStartedRef.current = true;
+        }
+      } catch (e) {}
+    }
+  }, [showSkillModal, gameStateArrived]);
+
+  useEffect(() => {
+    // 게임 종료 창이 뜨는 순간 → bgm 정지
+    if (showResultModal && gameInstance.current) {
+      try {
+        const scene = (gameInstance.current.scene.scenes[0] as any);
+        if (scene?.bgmAudio && !scene.bgmAudio.paused) {
+          scene.bgmAudio.pause();
+          scene.bgmAudio.currentTime = 0;
+        }
+      } catch (e) {}
+    }
+  }, [showResultModal]);
+
+  // gameStateUpdate가 오면 setGameStateArrived(true)
+  useEffect(() => {
+    const handleGameStateUpdate = () => {
+      setGameStateArrived(true);
+    };
+    socketService.on('gameStateUpdate', handleGameStateUpdate);
+    return () => {
+      socketService.off('gameStateUpdate', handleGameStateUpdate);
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>

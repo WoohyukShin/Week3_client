@@ -21,6 +21,7 @@ interface GameState {
 
 export default class GameScene extends Phaser.Scene {
   private players: Map<string, Player> = new Map();
+  private deskMap: Map<number, Phaser.GameObjects.Sprite> = new Map();
   private localPlayerId: string = '';
   private gameState: GameState = { roomId: '', players: [], isManagerAppeared: false };
   private focusGaugeValue: number = 100;
@@ -37,7 +38,25 @@ export default class GameScene extends Phaser.Scene {
       '/src/assets/sound/bumpercar_sound1.mp3',
       '/src/assets/sound/bumpercar_sound2.mp3',
     ],
-    // 추후 다른 스킬도 여기에 추가
+    coffee: [
+      '/src/assets/sound/coffee_sound1.mp3',
+      '/src/assets/sound/coffee_sound2.mp3',
+    ],
+    exercise: [
+      '/src/assets/sound/exercise_sound1.mp3',
+    ],
+    shotgun: [
+      '/src/assets/sound/shotgun_sound1.mp3',
+      '/src/assets/sound/shotgun_sound2.mp3',
+    ],
+    game: [
+      '/src/assets/sound/game_sound1.mp3',
+      '/src/assets/sound/game_sound2.mp3',
+    ],
+    coding: [
+      '/src/assets/sound/coding_sound1.mp3',
+      '/src/assets/sound/coding_sound2.mp3',
+    ],
   };
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
@@ -45,15 +64,23 @@ export default class GameScene extends Phaser.Scene {
     coding: 1.0,      // 코딩 애니메이션 크기
     exercise: 1.2,    // 운동 애니메이션 크기
     pkpk: 1.5,      // pkpk 애니메이션 크기
-    desk: 1.0,        // 책상 크기
-    chair: 0.5,       // 의자 크기
+    desk: 1.4,        // 책상 크기
+    chair: 0.4,       // 의자 크기
     player: 1.0,      // 플레이어 기본 크기
     'death-image': 0.7, // 사망 이미지 크기
-    door: 1.2,        // 문 이미지 크기
-    manager: 1.3,      // 매니저 애니메이션 크기
-    coffee: 1.2,       // 커피 애니메이션 크기
+    door: 1.6,        // 문 이미지 크기
+    manager: 1.4,      // 매니저 애니메이션 크기
+    coffee: 1.0,       // 커피 애니메이션 크기
     shotgun: 1.3,      // 샷건 애니메이션 크기
   };
+
+  private DANCE_BGM_MAP: Record<string, string[]> = {
+    default: [
+      '/src/assets/sound/pkpk.mp3', // 예시: pkpk.mp3 (실제 파일명에 맞게 수정)
+    ],
+    // 추후 danceType별로 추가
+  };
+  private currentDanceAudio: HTMLAudioElement | null = null;
 
   constructor() {
     super('GameScene');
@@ -73,9 +100,12 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image('background', '/src/assets/img/game_background.jpg');
     this.load.image('chair', '/src/assets/img/chair.png');
-    this.load.image('desk', '/src/assets/img/desk.png');
     
     // 스프라이트시트 로드 (프레임 크기 조정)
+    this.load.spritesheet('desk', '/src/assets/img/desk.png', {
+      frameWidth: 1148/4,
+      frameHeight: 217,
+    });
     this.load.spritesheet('coding', '/src/assets/img/coding.png', {
       frameWidth: 809/3,
       frameHeight: 307,
@@ -119,6 +149,7 @@ export default class GameScene extends Phaser.Scene {
     this.isManagerAppearing = false;
     this.bumpercarAudio = null;
     this.playerPositions = {};
+    this.deskMap.clear(); // 초기화
 
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
@@ -148,10 +179,10 @@ export default class GameScene extends Phaser.Scene {
     // 게임 상태 요청
     socketService.emit('getGameState', {});
 
-    // 배경음악 반복 재생
-    this.bgmAudio = new Audio('/src/assets/sound/bgm.mp3');
+    // 키보드 소리 반복 재생
+    this.bgmAudio = new Audio('/src/assets/sound/coding_sound1.mp3');
     this.bgmAudio.loop = true;
-    this.bgmAudio.volume = 0.2;
+    this.bgmAudio.volume = 0.5;
     this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
   }
 
@@ -342,6 +373,31 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     });
+
+    // 춤별 BGM 재생
+    socketService.on('playDanceBgm', (data: { danceType: string }) => {
+      console.log('[DEBUG] GameScene.ts : playDanceBgm : ', data.danceType);
+      const bgmList = this.DANCE_BGM_MAP[data.danceType] || this.DANCE_BGM_MAP['default'];
+      if (bgmList && bgmList.length > 0) {
+        const bgmPath = bgmList[0];
+        if (this.currentDanceAudio) {
+          this.currentDanceAudio.pause();
+          this.currentDanceAudio.currentTime = 0;
+        }
+        this.currentDanceAudio = new Audio(bgmPath);
+        this.currentDanceAudio.loop = true;
+        this.currentDanceAudio.volume = 1.0;
+        this.currentDanceAudio.play().catch(() => {});
+      }
+    });
+    socketService.on('stopDanceBgm', (data: { danceType: string }) => {
+      console.log('[DEBUG] GameScene.ts : stopDanceBgm : ', data.danceType);
+      if (this.currentDanceAudio) {
+        this.currentDanceAudio.pause();
+        this.currentDanceAudio.currentTime = 0;
+        this.currentDanceAudio = null;
+      }
+    });
   }
 
   setupInput() {
@@ -387,14 +443,17 @@ export default class GameScene extends Phaser.Scene {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-      
-      // Desk 배치 (가장 뒤) - 새로운 스케일 시스템 적용
-      this.add.image(position.x, position.y + 50 * scaleFactor, 'desk')
+      // 책상은 기존보다 위로 20px 이동
+      const deskY = position.y + 50 * scaleFactor - 20;
+      // 의자는 기존보다 아래로 20px 이동
+      const chairY = position.y + 120 * scaleFactor + 20;
+      // Desk 스프라이트 생성 (플레이어별)
+      const deskFrame = 3;
+      const deskSprite = this.add.sprite(position.x, deskY, 'desk', deskFrame)
         .setScale(this.getImageScale('desk'))
         .setDepth(1);
-      
-      // Chair 배치 (가장 앞) - 새로운 스케일 시스템 적용
-      this.add.image(position.x, position.y + 120 * scaleFactor, 'chair')
+      // Chair 배치
+      this.add.image(position.x, chairY, 'chair')
         .setScale(this.getImageScale('chair'))
         .setDepth(3);
     });
@@ -467,24 +526,21 @@ export default class GameScene extends Phaser.Scene {
     const playerIndex = Array.from(this.players.keys()).length;
     const positions = Object.values(this.playerPositions);
     const position = playerIndex < positions.length ? positions[playerIndex] : { x: 400, y: 300 };
-    
-    // Player 배치 (중간) - 새로운 스케일 시스템 적용
+    // deskSprite는 이미 자리별로 생성되어 있으므로 따로 생성하지 않음
+
+    // Player 배치 (중간)
     const player = new Player(
-      this, 
-      position.x, 
-      position.y, 
-      'coding', 
-      parseInt(playerData.socketId.slice(-4), 16), // 간단한 ID 생성
+      this,
+      position.x,
+      position.y,
+      'coding',
+      parseInt(playerData.socketId.slice(-4), 16),
       playerData.username
     );
-    
     player.setScale(this.getImageScale('player')).setDepth(2);
-
     player.isAlive = playerData.isAlive;
     player.playerMotion = playerData.playerMotion;
-    // 애니메이션 처리
     this.applyPlayerMotion(player, playerData.playerMotion);
-
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
@@ -520,6 +576,16 @@ export default class GameScene extends Phaser.Scene {
     if (player.playerMotion !== playerData.playerMotion) {
       this.applyPlayerMotion(player, playerData.playerMotion);
       player.playerMotion = playerData.playerMotion;
+    }
+    // 자리 인덱스 계산
+    const playerIndex = Array.from(this.players.keys()).indexOf(playerData.socketId);
+    const deskSprite = this.deskMap.get(playerIndex);
+    if (deskSprite) {
+      let deskFrame = 3;
+      if (playerData.playerMotion === 'gaming') {
+        deskFrame = Math.floor(Math.random() * 3);
+      }
+      deskSprite.setFrame(deskFrame);
     }
   }
 
@@ -582,6 +648,7 @@ export default class GameScene extends Phaser.Scene {
       if (nameText) {
         nameText.destroy();
       }
+      // deskSprite는 이미 자리별로 생성되어 있으므로 따로 삭제하지 않음
       
       player.destroy();
       this.players.delete(socketId);
