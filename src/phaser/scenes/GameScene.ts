@@ -91,9 +91,12 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image('background', '/src/assets/img/game_background.jpg');
     this.load.image('chair', '/src/assets/img/chair.png');
-    this.load.image('desk', '/src/assets/img/desk.png');
     
     // 스프라이트시트 로드 (프레임 크기 조정)
+    this.load.spritesheet('desk', '/src/assets/img/desk.png', {
+      frameWidth: 1148/4,
+      frameHeight: 217,
+    });
     this.load.spritesheet('coding', '/src/assets/img/coding.png', {
       frameWidth: 809/3,
       frameHeight: 307,
@@ -485,24 +488,31 @@ export default class GameScene extends Phaser.Scene {
     const playerIndex = Array.from(this.players.keys()).length;
     const positions = Object.values(this.playerPositions);
     const position = playerIndex < positions.length ? positions[playerIndex] : { x: 400, y: 300 };
-    
-    // Player 배치 (중간) - 새로운 스케일 시스템 적용
+
+    // Desk 스프라이트 생성 (플레이어별)
+    let deskFrame = 3;
+    if (playerData.playerMotion === 'gaming') {
+      deskFrame = Math.floor(Math.random() * 3);
+    }
+    const deskSprite = this.add.sprite(position.x, position.y + 50 * this.getImageScale('desk'), 'desk', deskFrame)
+      .setScale(this.getImageScale('desk'))
+      .setDepth(1);
+
+    // Player 배치 (중간)
     const player = new Player(
-      this, 
-      position.x, 
-      position.y, 
-      'coding', 
-      parseInt(playerData.socketId.slice(-4), 16), // 간단한 ID 생성
+      this,
+      position.x,
+      position.y,
+      'coding',
+      parseInt(playerData.socketId.slice(-4), 16),
       playerData.username
     );
-    
     player.setScale(this.getImageScale('player')).setDepth(2);
-
     player.isAlive = playerData.isAlive;
     player.playerMotion = playerData.playerMotion;
-    // 애니메이션 처리
+    // deskSprite를 player 객체에 저장
+    (player as any).deskSprite = deskSprite;
     this.applyPlayerMotion(player, playerData.playerMotion);
-
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
@@ -538,6 +548,15 @@ export default class GameScene extends Phaser.Scene {
     if (player.playerMotion !== playerData.playerMotion) {
       this.applyPlayerMotion(player, playerData.playerMotion);
       player.playerMotion = playerData.playerMotion;
+    }
+    // deskSprite 프레임 업데이트
+    const deskSprite = (player as any).deskSprite;
+    if (deskSprite) {
+      let deskFrame = 3;
+      if (playerData.playerMotion === 'gaming') {
+        deskFrame = Math.floor(Math.random() * 3);
+      }
+      deskSprite.setFrame(deskFrame);
     }
   }
 
