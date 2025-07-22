@@ -37,7 +37,25 @@ export default class GameScene extends Phaser.Scene {
       '/src/assets/sound/bumpercar_sound1.mp3',
       '/src/assets/sound/bumpercar_sound2.mp3',
     ],
-    // 추후 다른 스킬도 여기에 추가
+    coffee: [
+      '/src/assets/sound/coffee_sound1.mp3',
+      '/src/assets/sound/coffee_sound2.mp3',
+    ],
+    exercise: [
+      '/src/assets/sound/exercise_sound1.mp3',
+    ],
+    shotgun: [
+      '/src/assets/sound/shotgun_sound1.mp3',
+      '/src/assets/sound/shotgun_sound2.mp3',
+    ],
+    game: [
+      '/src/assets/sound/game_sound1.mp3',
+      '/src/assets/sound/game_sound2.mp3',
+    ],
+    coding: [
+      '/src/assets/sound/coding_sound1.mp3',
+      '/src/assets/sound/coding_sound2.mp3',
+    ],
   };
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
@@ -148,10 +166,10 @@ export default class GameScene extends Phaser.Scene {
     // 게임 상태 요청
     socketService.emit('getGameState', {});
 
-    // 배경음악 반복 재생
-    this.bgmAudio = new Audio('/src/assets/sound/bgm.mp3');
+    // 키보드 소리 반복 재생
+    this.bgmAudio = new Audio('/src/assets/sound/coding_sound1.mp3');
     this.bgmAudio.loop = true;
-    this.bgmAudio.volume = 0.2;
+    this.bgmAudio.volume = 0.5;
     this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
   }
 

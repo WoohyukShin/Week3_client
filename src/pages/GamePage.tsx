@@ -9,8 +9,8 @@ import ResultModal from '../components/ResultModal';
 import socketService from '../services/socket';
 import './GamePage.css';
 
-const gameWidth = 800;
-const gameHeight = 600;
+const gameWidth = 1200;
+const gameHeight = 800;
 
 // GamePage.tsx 상단 생략...
 
