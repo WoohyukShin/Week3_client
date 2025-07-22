@@ -43,6 +43,11 @@ const RoomPage = () => {
     });
 
     socketService.on('gameStarted', () => {
+      // 기존: navigate(`/game/${roomId}`);
+      // 이제는 gameStart 이벤트에서만 이동
+    });
+
+    socketService.on('gameStart', () => {
       navigate(`/game/${roomId}`);
     });
 
@@ -57,12 +62,14 @@ const RoomPage = () => {
       socketService.off('playerJoined');
       socketService.off('playerLeft');
       socketService.off('gameStarted');
+      socketService.off('gameStart');
       socketService.off('error');
     };
   }, [roomId, navigate]);
 
   const handleStartGame = () => {
-    navigate(`/game/${roomId}`);
+    socketService.emit('startGame', {});
+    // navigate(`/game/${roomId}`); // 제거
   };
 
   const handleLeaveRoom = () => {
