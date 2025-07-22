@@ -35,27 +35,27 @@ export default class GameScene extends Phaser.Scene {
   private bgmAudio: HTMLAudioElement | null = null;
   private SFX_MAP: Record<string, string[] | (() => string)> = {
     bumpercar: [
-      '/src/assets/sound/bumpercar_sound1.mp3',
-      '/src/assets/sound/bumpercar_sound2.mp3',
+      '/sound/bumpercar_sound1.mp3',
+      '/sound/bumpercar_sound2.mp3',
     ],
     coffee: [
-      '/src/assets/sound/coffee_sound1.mp3',
-      '/src/assets/sound/coffee_sound2.mp3',
+      '/sound/coffee_sound1.mp3',
+      '/sound/coffee_sound2.mp3',
     ],
     exercise: [
-      '/src/assets/sound/exercise_sound1.mp3',
+      '/sound/exercise_sound1.mp3',
     ],
     shotgun: [
-      '/src/assets/sound/shotgun_sound1.mp3',
-      '/src/assets/sound/shotgun_sound2.mp3',
+      '/sound/shotgun_sound1.mp3',
+      '/sound/shotgun_sound2.mp3',
     ],
     game: [
-      '/src/assets/sound/game_sound1.mp3',
-      '/src/assets/sound/game_sound2.mp3',
+      '/sound/game_sound1.mp3',
+      '/sound/game_sound2.mp3',
     ],
     coding: [
-      '/src/assets/sound/coding_sound1.mp3',
-      '/src/assets/sound/coding_sound2.mp3',
+      '/sound/coding_sound1.mp3',
+      '/sound/coding_sound2.mp3',
     ],
   };
 
@@ -76,7 +76,7 @@ export default class GameScene extends Phaser.Scene {
 
   private DANCE_BGM_MAP: Record<string, string[]> = {
     pkpk: [
-      '/src/assets/sound/pkpk.mp3',
+      '/sound/pkpk.mp3',
     ],
     // 추후 danceType별로 추가
   };
@@ -112,45 +112,45 @@ export default class GameScene extends Phaser.Scene {
 
 
   preload() {
-    this.load.image('background', '/src/assets/img/game_background.jpg');
-    this.load.image('chair', '/src/assets/img/chair.png');
+    this.load.image('background', '/img/game_background.jpg');
+    this.load.image('chair', '/img/chair.png');
     
     // 스프라이트시트 로드 (프레임 크기 조정)
-    this.load.spritesheet('desk', '/src/assets/img/desk.png', {
+    this.load.spritesheet('desk', '/img/desk.png', {
       frameWidth: 1148/4,
       frameHeight: 217,
     });
-    this.load.spritesheet('coding', '/src/assets/img/coding.png', {
+    this.load.spritesheet('coding', '/img/coding.png', {
       frameWidth: 809/3,
       frameHeight: 307,
     });
-    this.load.spritesheet('exercise', '/src/assets/img/exercise.png', {
+    this.load.spritesheet('exercise', '/img/exercise.png', {
       frameWidth: 1067/5,
       frameHeight: 234,
     });
-    this.load.spritesheet('pkpk', '/src/assets/img/pkpk.png', {
+    this.load.spritesheet('pkpk', '/img/pkpk.png', {
       frameWidth: 1154/6,
       frameHeight: 216,
     });
-    this.load.spritesheet('manager', '/src/assets/img/manager.png', {
+    this.load.spritesheet('manager', '/img/manager.png', {
       frameWidth: 1093/6,
       frameHeight: 228,
     });
-    this.load.spritesheet('bumpercar', '/src/assets/img/bumpercar.png', {
+    this.load.spritesheet('bumpercar', '/img/bumpercar.png', {
       frameWidth: 877/4,
       frameHeight: 284,
     });
-    this.load.spritesheet('coffee', '/src/assets/img/coffee.png', {
+    this.load.spritesheet('coffee', '/img/coffee.png', {
       frameWidth: 736/4,
       frameHeight: 262,
     });
-    this.load.spritesheet('shotgun', '/src/assets/img/shotgun.png', {
+    this.load.spritesheet('shotgun', '/img/shotgun.png', {
       frameWidth: 1253/7,
       frameHeight: 199,
     });
 
-    this.load.image('door', '/src/assets/img/door.png');
-    this.load.image('death-image', '/src/assets/img/deathplayer.png');
+    this.load.image('door', '/img/door.png');
+    this.load.image('death-image', '/img/deathplayer.png');
   }
 
   create() {
@@ -194,7 +194,7 @@ export default class GameScene extends Phaser.Scene {
     socketService.emit('getGameState', {});
 
     // 키보드 소리 반복 재생
-    this.bgmAudio = new Audio('/src/assets/sound/coding_sound1.mp3');
+    this.bgmAudio = new Audio('/sound/coding_sound1.mp3');
     this.bgmAudio.loop = true;
     this.bgmAudio.volume = this.SOUND_SCALES['bgm'] ?? 0.5;
     this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
