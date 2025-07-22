@@ -75,12 +75,26 @@ export default class GameScene extends Phaser.Scene {
   };
 
   private DANCE_BGM_MAP: Record<string, string[]> = {
-    default: [
-      '/src/assets/sound/pkpk.mp3', // 예시: pkpk.mp3 (실제 파일명에 맞게 수정)
+    pkpk: [
+      '/src/assets/sound/pkpk.mp3',
     ],
     // 추후 danceType별로 추가
   };
   private currentDanceAudio: HTMLAudioElement | null = null;
+  private BGM_VOLUME = 0.5;
+  private SFX_VOLUME = 1.0;
+  private DANCE_BGM_VOLUME = 1.0;
+  private SOUND_SCALES: Record<string, number> = {
+    bgm: 0.5,
+    bumpercar: 1.0,
+    coffee: 0.8,
+    exercise: 1.0,
+    shotgun: 0.8,
+    game: 1.0,
+    default: 1.0,
+    pkpk: 0.5, // 예시: pkpk.mp3
+  };
+  private danceAudioArr: { danceType: string; audio: HTMLAudioElement }[] = [];
 
   constructor() {
     super('GameScene');
@@ -182,7 +196,7 @@ export default class GameScene extends Phaser.Scene {
     // 키보드 소리 반복 재생
     this.bgmAudio = new Audio('/src/assets/sound/coding_sound1.mp3');
     this.bgmAudio.loop = true;
-    this.bgmAudio.volume = 0.5;
+    this.bgmAudio.volume = this.SOUND_SCALES['bgm'] ?? 0.5;
     this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
   }
 
@@ -330,17 +344,6 @@ export default class GameScene extends Phaser.Scene {
       this.showCommitSuccess(data.socketId, data.commitCount);
     });
 
-    // Push 시작
-    socketService.on('pushStarted', (data: { socketId: string }) => {
-      console.log(`🚀 Push started: ${data.socketId}`);
-    });
-
-    // Push 실패
-    socketService.on('pushFailed', (data: { socketId: string }) => {
-      console.log(`❌ Push failed: ${data.socketId}`);
-      this.showPushFailed(data.socketId);
-    });
-
     // 운영진 등장
     socketService.on('managerAppeared', () => {
       if (this.managerAppearTimeout) {
@@ -354,10 +357,33 @@ export default class GameScene extends Phaser.Scene {
       }, 600);
     });
 
+    // 진짜 게임 시작 신호
+    socketService.on('startGameLoop', () => {
+      console.log('[DEBUG] GameScene.ts : startGameLoop');
+      if (this.bgmAudio) {
+        this.bgmAudio.currentTime = 0;
+        this.bgmAudio.volume = this.SOUND_SCALES['bgm'] ?? 0.5;
+        this.bgmAudio.play().catch(() => {});
+      }
+    });
+    // 게임 종료 시 모든 사운드 정지
+    socketService.on('gameEnded', () => {
+      console.log('[DEBUG] GameScene.ts : gameEnded - 모든 사운드 정지');
+      if (this.bgmAudio) {
+        this.bgmAudio.pause();
+        this.bgmAudio.currentTime = 0;
+      }
+      this.danceAudioArr.forEach(({ audio }) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      this.danceAudioArr = [];
+    });
     // 스킬 SFX 재생 이벤트
     socketService.on('playSkillSfx', (data: { type: string }) => {
       console.log('[DEBUG] GameScene.ts : playSkillSfx : ', data.type);
       const sfxList = this.SFX_MAP[data.type];
+      const volume = this.SOUND_SCALES[data.type] ?? 1.0;
       if (sfxList) {
         let sfxPath = '';
         if (Array.isArray(sfxList)) {
@@ -368,35 +394,36 @@ export default class GameScene extends Phaser.Scene {
         }
         if (sfxPath) {
           const audio = new Audio(sfxPath);
-          audio.volume = 1.0;
+          audio.volume = volume;
           audio.play();
         }
       }
     });
 
-    // 춤별 BGM 재생
+    // 춤별 BGM 재생 (여러 명 동시 가능)
     socketService.on('playDanceBgm', (data: { danceType: string }) => {
       console.log('[DEBUG] GameScene.ts : playDanceBgm : ', data.danceType);
-      const bgmList = this.DANCE_BGM_MAP[data.danceType] || this.DANCE_BGM_MAP['default'];
-      if (bgmList && bgmList.length > 0) {
-        const bgmPath = bgmList[0];
-        if (this.currentDanceAudio) {
-          this.currentDanceAudio.pause();
-          this.currentDanceAudio.currentTime = 0;
-        }
-        this.currentDanceAudio = new Audio(bgmPath);
-        this.currentDanceAudio.loop = true;
-        this.currentDanceAudio.volume = 1.0;
-        this.currentDanceAudio.play().catch(() => {});
-      }
+      const bgmList = this.DANCE_BGM_MAP[data.danceType];
+      if (!bgmList || bgmList.length === 0) return;
+      const volume = this.SOUND_SCALES[data.danceType] ?? 1.0;
+      const bgmPath = bgmList[0];
+      const audio = new Audio(bgmPath);
+      audio.loop = true;
+      audio.volume = volume;
+      audio.play().catch(() => {});
+      this.danceAudioArr.push({ danceType: data.danceType, audio });
     });
+    // 춤별 BGM 정지 (해당 danceType만 모두 정지)
     socketService.on('stopDanceBgm', (data: { danceType: string }) => {
       console.log('[DEBUG] GameScene.ts : stopDanceBgm : ', data.danceType);
-      if (this.currentDanceAudio) {
-        this.currentDanceAudio.pause();
-        this.currentDanceAudio.currentTime = 0;
-        this.currentDanceAudio = null;
-      }
+      this.danceAudioArr = this.danceAudioArr.filter(({ danceType, audio }) => {
+        if (danceType === data.danceType) {
+          audio.pause();
+          audio.currentTime = 0;
+          return false;
+        }
+        return true;
+      });
     });
   }
 
@@ -682,8 +709,11 @@ export default class GameScene extends Phaser.Scene {
       console.log('🎭 Changing door to manager animation...');
       this.managerSprite.setTexture('manager');
       this.managerSprite.setScale(this.getImageScale('manager'));
-      this.managerSprite.play('manager');
-      
+      this.managerSprite.play({ key: 'manager', repeat: 0 }); // 반복 없이
+      // 애니메이션 끝나면 마지막 프레임에서 멈춤
+      this.managerSprite.on('animationcomplete-manager', () => {
+        this.managerSprite.setFrame(5); // 마지막 프레임(0~5)
+      }, this);
       console.log('🚨 Manager appeared and started animation!');
     } else {
       console.log('❌ Manager sprite not found!');
@@ -784,5 +814,4 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // gameEnded 관련 리스너, 함수, 호출 모두 삭제
 }
