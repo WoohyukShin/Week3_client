@@ -56,17 +56,12 @@ const GamePage = () => {
     };
   }, [navigate]);
 
-  // 소켓 연결 및 skill/ready 이벤트 처리
   useEffect(() => {
     console.log('[DEBUG] GamePage_tsx.useEffect : connecting socket...');
     socketService.on('skillAssigned', ({ skill }) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
-      if (skillName) {
-        setShowSkillModal(true);
-      } else {
-        setShowSkillModal(false);
-      }
+      setShowSkillModal(true);
       setOkClicked(false);
     });
     socketService.on('skillReadyCount', ({ ready, total }) => {

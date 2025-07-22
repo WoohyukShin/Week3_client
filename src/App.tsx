@@ -7,8 +7,15 @@ import GamePage from './pages/GamePage';
 import RankingPage from './pages/RankingPage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
+import { useEffect } from 'react';
+import socketService from './services/socket';
 
 function App() {
+  useEffect(() => {
+    if (!socketService.socket?.connected) {
+      socketService.connect();
+    }
+  }, []);
   return (
     <Routes>
       {/* Public Routes */}
