@@ -62,7 +62,11 @@ const GamePage = () => {
     socketService.on('skillAssigned', ({ skill }) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
-      setShowSkillModal(true);
+      if (skillName) {
+        setShowSkillModal(true);
+      } else {
+        setShowSkillModal(false);
+      }
       setOkClicked(false);
     });
     socketService.on('skillReadyCount', ({ ready, total }) => {
