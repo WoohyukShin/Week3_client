@@ -31,4 +31,4 @@ export const SKILL_INFO = {
     description: '게임을 플레이해서 지루함을 해소합니다.<br />Alt+Tab을 통해 빠른 화면 전환이 가능하므로,<br />운영진이 등장해도 안전합니다.',
     image: gameImg,
   },
-}; 
+}as const; 

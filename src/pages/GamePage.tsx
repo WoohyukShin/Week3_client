@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Phaser from 'phaser';
-import GameScene from '../phaser/scenes/GameScene.ts';
+import GameScene from '../phaser/scenes/GameScene';
 import ModalTab from '../components/ModalTab';
 import { SKILL_INFO } from '../constants/skills';
 import ResultModal from '../components/ResultModal';
@@ -12,8 +12,6 @@ import './GamePage.css';
 const gameWidth = 1200;
 const gameHeight = 800;
 
-// GamePage.tsx 상단 생략...
-
 const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
   const gameInstance = useRef<Phaser.Game | null>(null);
@@ -22,7 +20,10 @@ const GamePage = () => {
 
   const initialTotalCount = location.state?.totalCount || 0;
   const [showSkillModal, setShowSkillModal] = useState(false);
-  const [skillName, setSkillName] = useState<string | null>(null);
+
+  type SkillKey = keyof typeof SKILL_INFO;
+  const [skillName, setSkillName] = useState<SkillKey | null>(null);
+
   const [readyCount, setReadyCount] = useState(0);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [okClicked, setOkClicked] = useState(false);
@@ -34,6 +35,21 @@ const GamePage = () => {
   const [showResultModal, setShowResultModal] = useState(false);
   const [gameStateArrived, setGameStateArrived] = useState(false);
   const gameStartedRef = useRef(false);
+
+  const [isCooldown, setIsCooldown] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState<number>(0);
+  const [skillUsageLeft, setSkillUsageLeft] = useState<number | null>(null);
+  const [showLightEffect, setShowLightEffect] = useState(false);
+  const [showBumpercarBanner, setShowBumpercarBanner] = useState(false);
+const [lastSkillUser, setLastSkillUser] = useState('');
+
+  const [skillUsages, setSkillUsages] = useState({
+    bumpercar: 1,
+    shotgun: 2,
+    coffee: Infinity,
+    game: Infinity,
+    exercise: Infinity,
+  });
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
@@ -60,9 +76,7 @@ const GamePage = () => {
       skill: string;
       time: string;
     }) => {
-      console.log('[gameEnded received]', data);
       const isWinner = data.winnerSocketId === socketService.socket?.id;
-      console.log('[~ isWinner]', isWinner);
       setResult(isWinner ? 'win' : 'lose');
       setCommitCount(data.commitCount);
       setSkillUsed(data.skill);
@@ -71,17 +85,12 @@ const GamePage = () => {
     };
 
     socketService.on('gameEnded', handleGameEnded);
-
     return () => {
       gameInstance.current?.destroy(true);
       gameInstance.current = null;
       socketService.off('gameEnded', handleGameEnded);
     };
   }, [navigate]);
-
-  useEffect(() => {
-    console.log('[result changed]', result);
-  }, [result]);
 
   useEffect(() => {
     socketService.emit('getGameState', {});
@@ -92,17 +101,26 @@ const GamePage = () => {
       setSkillName(skill);
       setShowSkillModal(true);
       setOkClicked(false);
+
+      // 제한된 스킬은 사용 횟수 초기 설정
+      if (skill === 'bumpercar') setSkillUsageLeft(1);
+      else if (skill === 'shotgun') setSkillUsageLeft(2);
+      else setSkillUsageLeft(null);
     };
+
     const handleSkillReadyCount = ({ ready, total }: any) => {
       setReadyCount(ready);
       setTotalCount(total);
     };
+
     const handleAllSkillReady = () => {
       setShowSkillModal(false);
     };
+
     socketService.registerSkillAssignedHandler(handleSkillAssigned);
     socketService.registerSkillReadyCountHandler(handleSkillReadyCount);
     socketService.registerAllSkillReadyHandler(handleAllSkillReady);
+
     return () => {
       socketService.unregisterSkillAssignedHandler(handleSkillAssigned);
       socketService.unregisterSkillReadyCountHandler(handleSkillReadyCount);
@@ -114,6 +132,55 @@ const GamePage = () => {
     socketService.emit('gameReady', {});
   }, []);
 
+  useEffect(() => {
+    const handleSkillUsed = ({ by, skill }: { by: string; skill: string }) => {
+      if (by === socketService.socket?.id) {
+        // 제한된 스킬일 경우 별도로 관리
+        if (skill === skillName && skillUsageLeft !== null) {
+          setSkillUsageLeft(prev => (prev !== null ? prev - 1 : null));
+        }
+
+        // ✅ skillUsages 갱신
+        setSkillUsages(prev => {
+          const current = prev[skill as keyof typeof prev];
+          if (current === Infinity) return prev;
+          return {
+            ...prev,
+            [skill]: Math.max(0, (current as number) - 1),
+          };
+        });
+
+        // 쿨타임 (예: bumpercar만)
+        if (skill === 'bumpercar') {
+          let time = 5;
+          setCooldownTime(time);
+          setIsCooldown(true);
+          const interval = setInterval(() => {
+            time -= 1;
+            setCooldownTime(time);
+            if (time <= 0) {
+              clearInterval(interval);
+              setIsCooldown(false);
+            }
+          }, 1000);
+        }
+
+        if (skill === 'bumpercar') {
+  setShowBumpercarBanner(true);
+  setLastSkillUser(by);
+  setShowLightEffect(true); // 💡 빛 연출 시작
+  setTimeout(() => {
+    setShowBumpercarBanner(false);
+    setShowLightEffect(false); // 💡 2초 뒤 사라짐
+  }, 2000);
+}
+
+      }
+    };
+    socketService.on('skillUsed', handleSkillUsed);
+    return () => socketService.off('skillUsed', handleSkillUsed);
+  }, [skillName, skillUsageLeft]);
+
   const handleOk = () => {
     if (!okClicked) {
       socketService.emit('skillReady', {});
@@ -121,13 +188,9 @@ const GamePage = () => {
     }
   };
 
-  const skillInfo =
-    skillName && (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO]
-      ? (SKILL_INFO as any)[skillName as keyof typeof SKILL_INFO]
-      : null;
+  const skillInfo = skillName ? SKILL_INFO[skillName as keyof typeof SKILL_INFO] : null;
 
   useEffect(() => {
-    // 실제 게임 프레임이 돌기 시작한 뒤에만 bgm play
     if (!showSkillModal && gameStateArrived && gameInstance.current && !gameStartedRef.current) {
       try {
         const scene = (gameInstance.current.scene.scenes[0] as any);
@@ -141,7 +204,6 @@ const GamePage = () => {
   }, [showSkillModal, gameStateArrived]);
 
   useEffect(() => {
-    // 게임 종료 창이 뜨는 순간 → bgm 정지
     if (showResultModal && gameInstance.current) {
       try {
         const scene = (gameInstance.current.scene.scenes[0] as any);
@@ -153,7 +215,6 @@ const GamePage = () => {
     }
   }, [showResultModal]);
 
-  // gameStateUpdate가 오면 setGameStateArrived(true)
   useEffect(() => {
     const handleGameStateUpdate = () => {
       setGameStateArrived(true);
@@ -185,8 +246,9 @@ const GamePage = () => {
           pointerEvents: 'auto',
         }}
       />
+
       <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
-      
+
       <ResultModal
         visible={showResultModal}
         result={result || 'lose'}
@@ -204,7 +266,45 @@ const GamePage = () => {
           navigate('/lobby');
         }}
       />
+
+      {isCooldown && (
+        <div className="cooldown-banner-simple">
+          스킬 쿨타임 중... ({cooldownTime}초 남음)
+        </div>
+      )}
+
+      {/* HUD: 우측 하단 스킬 정보 */}
+{skillName && (
+  <div
+    style={{
+      position: 'absolute',
+      bottom: 20,
+      right: 20,
+      background: 'rgba(0,0,0,0.6)',
+      color: 'white',
+      padding: '12px 20px',
+      borderRadius: '12px',
+      fontSize: '16px',
+      lineHeight: '1.6',
+    }}
+  >
+    <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>내 스킬 현황</div>
+    <div>
+      {SKILL_INFO[skillName]?.name || skillName}:{' '}
+      {skillUsages[skillName] === Infinity ? '∞' : `${skillUsages[skillName]}회`}
     </div>
+
+
+{showLightEffect && (
+  <div className="light-effect" />
+)}
+
+
+  </div>
+
+  
+)}
+      </div>
   );
 };
 
