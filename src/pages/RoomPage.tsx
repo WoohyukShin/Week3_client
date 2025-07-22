@@ -33,12 +33,12 @@ const RoomPage = () => {
       socketService.connect();
     }
 
-    socketService.on('roomState', (newRoomState: RoomState) => {
+    socketService.on('roomState', (newRoomState: any) => {
       setRoomState(newRoomState);
       setIsLoading(false);
     });
 
-    socketService.on('playerJoined', (newRoomState: RoomState) => {
+    socketService.on('playerJoined', (newRoomState: any) => {
       setRoomState(newRoomState);
     });
 
@@ -50,7 +50,7 @@ const RoomPage = () => {
       navigate(`/game/${roomId}`);
     });
 
-    socketService.on('error', (error) => {
+    socketService.on('error', (error: any) => {
       setError(error.message || '방에서 오류가 발생했습니다.');
     });
 

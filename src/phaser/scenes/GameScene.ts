@@ -1,6 +1,6 @@
 // src/phaser/scenes/GameScene.ts
 import Phaser from 'phaser';
-import socket from '../../services/socket';
+import socketService from '../../services/socket';
 import Player from '../object/Player';
 
 interface GamePlayer {
@@ -125,7 +125,7 @@ export default class GameScene extends Phaser.Scene {
     this.setupManagerArea();
     
     // 게임 상태 요청
-    socket.emit('getGameState', {});
+    socketService.emit('getGameState', {});
   }
 
   setupUI() {
@@ -205,67 +205,62 @@ export default class GameScene extends Phaser.Scene {
 
   setupSocketListeners() {
     // 게임 상태 업데이트
-    socket.on('gameStateUpdate', (gameState: GameState) => {
+    socketService.on('gameStateUpdate', (gameState: GameState) => {
       console.log('GameState Update:', gameState);
       this.updateGameState(gameState);
     });
-
     // 플레이어 추가
-    socket.on('playerJoined', (playerData: GamePlayer) => {
+    socketService.on('playerJoined', (playerData: GamePlayer) => {
       console.log('Player joined game:', playerData);
       this.addPlayer(playerData);
     });
-
     // 플레이어 제거
-    socket.on('playerLeft', (playerData: { socketId: string }) => {
+    socketService.on('playerLeft', (playerData: { socketId: string }) => {
       console.log('Player left game:', playerData);
       this.removePlayer(playerData.socketId);
     });
-
     // 플레이어 액션
-    socket.on('playerAction', (data: { socketId: string; action: string; payload?: any }) => {
+    socketService.on('playerAction', (data: { socketId: string; action: string; payload?: any }) => {
       console.log('Player action:', data);
       this.handlePlayerAction(data);
     });
-
     // 로컬 플레이어 ID 설정
-    socket.on('setLocalPlayer', (playerId: string) => {
+    socketService.on('setLocalPlayer', (playerId: string) => {
       this.localPlayerId = playerId;
       console.log('Local player ID set:', playerId);
     });
-
     // === 백엔드 게임 이벤트 연동 ===
 
     // 플레이어 사망
-    socket.on('playerDied', (data: { socketId: string; reason: string }) => {
+    socketService.on('playerDied', (data: { socketId: string; reason: string }) => {
       console.log(`💀 Player died: ${data.socketId}, reason: ${data.reason}`);
       this.handlePlayerDeath(data.socketId, data.reason);
     });
 
     // 커밋 성공
-    socket.on('commitSuccess', (data: { socketId: string; commitCount: number }) => {
+    socketService.on('commitSuccess', (data: { socketId: string; commitCount: number }) => {
       console.log(`✅ Commit success: ${data.socketId}, count: ${data.commitCount}`);
       this.showCommitSuccess(data.socketId, data.commitCount);
     });
 
     // Push 시작
-    socket.on('pushStarted', (data: { socketId: string }) => {
+    socketService.on('pushStarted', (data: { socketId: string }) => {
       console.log(`🚀 Push started: ${data.socketId}`);
     });
 
     // Push 실패
-    socket.on('pushFailed', (data: { socketId: string }) => {
+    socketService.on('pushFailed', (data: { socketId: string }) => {
       console.log(`❌ Push failed: ${data.socketId}`);
       this.showPushFailed(data.socketId);
     });
 
     // 게임 종료
-    socket.on('gameEnded', (data: { winner: any }) => {
-      console.log('🏁 Game ended:', data.winner);
+    socketService.on('gameEnded', (data: { winner: any }) => {
+      console.log('�� Game ended:', data.winner);
       this.handleGameEnd(data.winner);
     });
 
-    socket.on('managerAppeared', () => {
+    socketService.on('managerAppeared', () => {
       if (this.managerAppearTimeout) {
         clearTimeout(this.managerAppearTimeout);
       }
@@ -278,7 +273,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     // 스킬 효과 처리
-    socket.on('skillEffect', (data: { type: string; socketId: string; duration?: number }) => {
+    socketService.on('skillEffect', (data: { type: string; socketId: string; duration?: number }) => {
       // 1. bumpercar
       if (data.type === 'bumpercar') {
         const player = this.players.get(data.socketId);
@@ -312,18 +307,18 @@ export default class GameScene extends Phaser.Scene {
   setupInput() {
     // 춤추기 (스페이스바)
     this.input.keyboard?.on('keydown-SPACE', () => {
-      socket.emit('playerAction', { action: 'startDancing' });
+      socketService.emit('playerAction', { action: 'startDancing' });
     });
     this.input.keyboard?.on('keyup-SPACE', () => {
-      socket.emit('playerAction', { action: 'stopDancing' });
+      socketService.emit('playerAction', { action: 'stopDancing' });
     });
     // P키로 push
     this.input.keyboard?.on('keydown-P', () => {
-      socket.emit('playerAction', { action: 'push' });
+      socketService.emit('playerAction', { action: 'push' });
     });
     // Z키로 스킬 사용
     this.input.keyboard?.on('keydown-Z', () => {
-      socket.emit('skillUse', {});
+      socketService.emit('skillUse', {});
     });
   }
 

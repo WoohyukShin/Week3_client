@@ -57,26 +57,28 @@ const GamePage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    console.log('[DEBUG] GamePage_tsx.useEffect : connecting socket...');
-    socketService.on('skillAssigned', ({ skill }) => {
+    const handleSkillAssigned = ({ skill }: any) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);
       setShowSkillModal(true);
       setOkClicked(false);
-    });
-    socketService.on('skillReadyCount', ({ ready, total }) => {
+    };
+    const handleSkillReadyCount = ({ ready, total }: any) => {
       console.log('[DEBUG] GamePage_tsx : skillReadyCount:', ready, total);
       setReadyCount(ready);
       setTotalCount(total);
-    });
-    socketService.on('allSkillReady', () => {
+    };
+    const handleAllSkillReady = () => {
       console.log('[DEBUG] GamePage_tsx : allSkillReady');
       setShowSkillModal(false);
-    });
+    };
+    socketService.registerSkillAssignedHandler(handleSkillAssigned);
+    socketService.registerSkillReadyCountHandler(handleSkillReadyCount);
+    socketService.registerAllSkillReadyHandler(handleAllSkillReady);
     return () => {
-      socketService.off('skillAssigned');
-      socketService.off('skillReadyCount');
-      socketService.off('allSkillReady');
+      socketService.unregisterSkillAssignedHandler(handleSkillAssigned);
+      socketService.unregisterSkillReadyCountHandler(handleSkillReadyCount);
+      socketService.unregisterAllSkillReadyHandler(handleAllSkillReady);
     };
   }, []);
 

@@ -9,6 +9,10 @@ const SOCKET_URL = 'https://week3server-production.up.railway.app'; // Railway �
 class SocketService {
   public socket: Socket | null = null;
 
+  private skillAssignedHandlers: ((data: any) => void)[] = [];
+  private skillReadyCountHandlers: ((data: any) => void)[] = [];
+  private allSkillReadyHandlers: (() => void)[] = [];
+
   connect(): void {
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
@@ -26,6 +30,16 @@ class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
     });
+
+    this.socket.on('skillAssigned', (data) => {
+      this.skillAssignedHandlers.forEach(fn => fn(data));
+    });
+    this.socket.on('skillReadyCount', (data) => {
+      this.skillReadyCountHandlers.forEach(fn => fn(data));
+    });
+    this.socket.on('allSkillReady', () => {
+      this.allSkillReadyHandlers.forEach(fn => fn());
+    });
   }
 
   disconnect(): void {
@@ -36,12 +50,31 @@ class SocketService {
     this.socket?.emit(event, data);
   }
 
-  on(event: string, callback: (data: any) => void): void {
+  on(event: string, callback: (...args: any[]) => void): void {
     this.socket?.on(event, callback);
   }
+  off(event: string, callback?: (...args: any[]) => void): void {
+    this.socket?.off(event, callback);
+  }
 
-  off(event: string): void {
-    this.socket?.off(event);
+  // 콜백 등록/해제 메서드
+  registerSkillAssignedHandler(fn: (data: any) => void) {
+    this.skillAssignedHandlers.push(fn);
+  }
+  unregisterSkillAssignedHandler(fn: (data: any) => void) {
+    this.skillAssignedHandlers = this.skillAssignedHandlers.filter(f => f !== fn);
+  }
+  registerSkillReadyCountHandler(fn: (data: any) => void) {
+    this.skillReadyCountHandlers.push(fn);
+  }
+  unregisterSkillReadyCountHandler(fn: (data: any) => void) {
+    this.skillReadyCountHandlers = this.skillReadyCountHandlers.filter(f => f !== fn);
+  }
+  registerAllSkillReadyHandler(fn: () => void) {
+    this.allSkillReadyHandlers.push(fn);
+  }
+  unregisterAllSkillReadyHandler(fn: () => void) {
+    this.allSkillReadyHandlers = this.allSkillReadyHandlers.filter(f => f !== fn);
   }
 }
 
