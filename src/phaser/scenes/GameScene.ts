@@ -6,15 +6,10 @@ import Player from '../object/Player';
 interface GamePlayer {
   socketId: string;
   username: string;
-  isDancing: boolean;
   isAlive: boolean;
-  commitGauge: number;
+  playerMotion: string; // 'coding' | 'dancing' | 'bumpercar' | 'exercise' | 'coffee' | 'shotgun' | 'gaming'
   flowGauge: number;
-  commitCount: number;
   skill: string | null;
-  bumpercar: boolean;
-  isExercising: boolean;
-  hasCaffeine: boolean;
   muscleCount: number;
 }
 
@@ -31,8 +26,6 @@ export default class GameScene extends Phaser.Scene {
   private focusGaugeValue: number = 100;
   private focusBar!: Phaser.GameObjects.Rectangle;
   private focusBarBg!: Phaser.GameObjects.Rectangle;
-  private commitBar!: Phaser.GameObjects.Rectangle;
-  private commitBarBg!: Phaser.GameObjects.Rectangle;
   private playerPositions: { [key: string]: { x: number; y: number } } = {};
   private managerSprite!: Phaser.GameObjects.Sprite;
   private managerAppearTimeout: any = null;
@@ -49,7 +42,9 @@ export default class GameScene extends Phaser.Scene {
     player: 1.0,      // 플레이어 기본 크기
     'death-image': 0.7, // 사망 이미지 크기
     door: 1.2,        // 문 이미지 크기
-    manager: 1.0      // 매니저 애니메이션 크기
+    manager: 1.0,      // 매니저 애니메이션 크기
+    coffee: 1.0,       // 커피 애니메이션 크기
+    shotgun: 1.0,      // 샷건 애니메이션 크기
   };
 
   constructor() {
@@ -92,6 +87,14 @@ export default class GameScene extends Phaser.Scene {
     this.load.spritesheet('bumpercar', '/src/assets/img/bumpercar.png', {
       frameWidth: 877/4,
       frameHeight: 284,
+    });
+    this.load.spritesheet('coffee', '/src/assets/img/coffee.png', {
+      frameWidth: 736/4,
+      frameHeight: 262,
+    });
+    this.load.spritesheet('shotgun', '/src/assets/img/shotgun.png', {
+      frameWidth: 1253/7,
+      frameHeight: 199,
     });
 
     this.load.image('door', '/src/assets/img/door.png');
@@ -146,24 +149,14 @@ export default class GameScene extends Phaser.Scene {
     
     const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
     const barHeight = 20 * uiScale * 1.5; // 게이지 바 높이 1.5배 확대
-    const commitBarHeight = 15 * uiScale * 1.5; // 커밋 게이지 높이 1.5배 확대
     const fontSize = Math.max(12, 14 * uiScale);
     
     // Flow Gauge
     this.focusBarBg = this.add.rectangle(20 * uiScale, 20 * uiScale, barWidth, barHeight, 0x222222).setOrigin(0, 0);
     this.focusBar = this.add.rectangle(20 * uiScale, 20 * uiScale, barWidth, barHeight, 0x00aaff).setOrigin(0, 0);
     
-    // Commit Gauge
-    this.commitBarBg = this.add.rectangle(20 * uiScale, 50 * uiScale, barWidth, commitBarHeight, 0x222222).setOrigin(0, 0);
-    this.commitBar = this.add.rectangle(20 * uiScale, 50 * uiScale, 0, commitBarHeight, 0x00ff00).setOrigin(0, 0);
-    
     // 게이지 라벨
     this.add.text((20 + barWidth + 10) * uiScale, (20 + barHeight/2) * uiScale, 'Flow', { 
-      fontSize: `${fontSize}px`, 
-      color: '#ffffff' 
-    });
-    
-    this.add.text((20 + barWidth + 10) * uiScale, (50 + commitBarHeight/2) * uiScale, 'Commit', { 
       fontSize: `${fontSize}px`, 
       color: '#ffffff' 
     });
@@ -210,6 +203,18 @@ export default class GameScene extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('bumpercar', { start: 0, end: 3 }),
       frameRate: 12,
       repeat: -1
+    });
+    this.anims.create({
+      key: 'coffee',
+      frames: this.anims.generateFrameNumbers('coffee', { start: 0, end: 3 }),
+      frameRate: 6,
+      repeat: 0 // 한 번만 재생
+    });
+    this.anims.create({
+      key: 'shotgun',
+      frames: this.anims.generateFrameNumbers('shotgun', { start: 0, end: 6 }),
+      frameRate: 12,
+      repeat: 0 // 한 번만 재생
     });
   }
 
@@ -296,39 +301,6 @@ export default class GameScene extends Phaser.Scene {
         this.hideManagerAnimation();
       }, 600);
     });
-
-    // 스킬 효과 처리
-    socketService.on('skillEffect', (data: { type: string; socketId: string; duration?: number }) => {
-      // 1. bumpercar
-      console.log('[DEBUG] GameScene.ts : skillEffect received', data.type);
-      if (data.type === 'bumpercar') {
-        console.log('[DEBUG] GameScene.ts : bumpercar skillEffect received', data.socketId);
-        const player = this.players.get(data.socketId);
-        if (player) {
-          player.bumpercar = true;
-          player.anims.play('bumpercar', true);
-          player.setScale(this.getImageScale('bumpercar'));
-        }
-        const soundIdx = Math.random() < 0.5 ? 1 : 2;
-        const audio = new Audio(`/src/assets/sound/bumpercar_sound${soundIdx}.mp3`);
-        audio.play();
-        this.bumpercarAudio = audio;
-      } else if (data.type === 'bumpercarEnd') {
-        const player = this.players.get(data.socketId);
-        if (player) {
-          player.bumpercar = false;
-          if (player.isAlive) {
-            player.anims.play('coding', true);
-            player.setScale(this.getImageScale('player'));
-          }
-        }
-        if (this.bumpercarAudio) {
-          this.bumpercarAudio.pause();
-          this.bumpercarAudio.currentTime = 0;
-          this.bumpercarAudio = null;
-        }
-      }
-    });
   }
 
   setupInput() {
@@ -350,7 +322,7 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  setupPlayerPositions() {
+  setupPlayerPositions() { // player 위치 설정
     // 화면 크기에 비례하여 플레이어 위치 설정
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
@@ -368,7 +340,7 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  setupAllDesksAndChairs() {
+  setupAllDesksAndChairs() { // 책상, 의자 설정
     // 모든 플레이어 위치에 desk와 chair 미리 배치
     Object.values(this.playerPositions).forEach((position) => {
       const screenWidth = this.scale.width;
@@ -387,7 +359,7 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  setupManagerArea() {
+  setupManagerArea() { // 운영진 위치 설정
     // 매니저 위치 설정 (화면 3/4 정도)
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
@@ -421,20 +393,16 @@ export default class GameScene extends Phaser.Scene {
       const oldFlowGauge = this.focusGaugeValue;
       this.focusGaugeValue = localPlayer.flowGauge || 100;
       this.focusBar.width = (this.focusGaugeValue / 100) * barWidth;
-      // 커밋 게이지 (Commit Gauge) 업데이트
-      const oldCommitGauge = this.commitBar.width;
-      const commitGaugePercent = (localPlayer.commitGauge / 100) * barWidth;
-      this.commitBar.width = commitGaugePercent;
       // 게이지 변경 로그 (디버깅용)
-      if (oldFlowGauge !== this.focusGaugeValue || oldCommitGauge !== this.commitBar.width) {
-        console.log(`📊 [${localPlayer.username}] Flow: ${oldFlowGauge} → ${this.focusGaugeValue}, Commit: ${Math.round(oldCommitGauge)} → ${Math.round(this.commitBar.width)}`);
+      if (oldFlowGauge !== this.focusGaugeValue) {
+        console.log(`📊 [${localPlayer.username}] Flow: ${oldFlowGauge} → ${this.focusGaugeValue}`);
       }
       // 모든 플레이어의 게이지 상태 로그 (디버깅용)
       console.log(`🎮 GameState received - Manager: ${gameState.isManagerAppeared}, Players: ${gameState.players.length}`);
       gameState.players.forEach(p => {
-        console.log(`  👤 [${p.username}] Flow: ${p.flowGauge}, Commit: ${p.commitGauge}, Dancing: ${p.isDancing}, Alive: ${p.isAlive}`);
+        console.log(`  👤 [${p.username}] Flow: ${p.flowGauge}`);
       });
-      console.log(`📊 Bar widths - Flow: ${this.focusBar.width}, Commit: ${this.commitBar.width}`);
+      console.log(`📊 Bar widths - Flow: ${this.focusBar.width}`);
     }
     // 플레이어들 업데이트
     gameState.players.forEach(playerData => {
@@ -471,17 +439,10 @@ export default class GameScene extends Phaser.Scene {
     
     player.setScale(this.getImageScale('player')).setDepth(2);
 
-    player.isDancing = playerData.isDancing;
     player.isAlive = playerData.isAlive;
-    
-    // 사망 상태면 death 이미지, 생존 상태면 코딩 애니메이션
-    if (playerData.isAlive) {
-      player.anims.play('coding', true);
-    } else {
-      player.setTexture('death-image');
-      player.setScale(this.getImageScale('death-image'));
-      player.anims.stop();
-    }
+    player.playerMotion = playerData.playerMotion;
+    // 애니메이션 처리
+    this.applyPlayerMotion(player, playerData.playerMotion);
 
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
@@ -495,70 +456,81 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
     }).setOrigin(0.5);
 
-    const commitText = this.add.text(position.x, position.y - 130 * scaleFactor, `Commit: ${playerData.commitCount}`, {
-      fontSize: `${Math.max(10, 12 * scaleFactor)}px`,
-      color: '#00ff00',
-      backgroundColor: '#000000',
-      padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
-    }).setOrigin(0.5);
-
     player.setData('nameText', nameText);
-    player.setData('commitText', commitText);
     this.players.set(playerData.socketId, player);
   }
 
   updatePlayer(playerData: GamePlayer) {
     const player = this.players.get(playerData.socketId);
     if (!player || !player.scene || !player.texture || typeof player.setTexture !== 'function') return;
-
-    const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
-    if (commitText) {
-      commitText.setText(`Commit: ${playerData.commitCount}`);
-    }
-
+    // 죽은 플레이어는 무조건 death-image
     if (!playerData.isAlive) {
       if (player.isAlive) {
         player.isAlive = false;
-        if (player.scene && player.texture && typeof player.setTexture === 'function') {
-          player.setTexture('death-image');
-          player.setScale(this.getImageScale('death-image'));
-        }
-        console.log(`💀 Player ${playerData.username} died`);
+        this.applyPlayerMotion(player, 'dead');
       }
       player.anims.stop();
       return;
     } else if (playerData.isAlive && !player.isAlive) {
       player.isAlive = true;
-      if (player.scene && player.texture && typeof player.setTexture === 'function') {
-        player.setTexture('coding');
-        player.setScale(this.getImageScale('player'));
-      }
-      console.log(`🔄 Player ${playerData.username} revived`);
+      this.applyPlayerMotion(player, playerData.playerMotion);
     }
+    // 살아있는 경우에만 playerMotion 변화 감지
+    if (player.playerMotion !== playerData.playerMotion) {
+      this.applyPlayerMotion(player, playerData.playerMotion);
+      player.playerMotion = playerData.playerMotion;
+    }
+  }
 
-    if (playerData.isAlive) {
-      // Exercise 애니메이션 중일 때는 덮어쓰지 않음 (3초간 보호)
-      const isExerciseAnimation = player.anims.currentAnim?.key === 'exercise';
-      
-      if (playerData.isDancing && !player.isDancing) {
-        player.isDancing = true;
-        if (!isExerciseAnimation && player.anims.currentAnim?.key !== 'dance') {
-          player.anims.play('dance', true);
-        }
-        if (!isExerciseAnimation) {
-          player.setScale(this.getImageScale('pkpk'));
-        }
-        console.log(`💃 Player ${playerData.username} started dancing`);
-      } else if (!playerData.isDancing && player.isDancing) {
-        player.isDancing = false;
-        if (!isExerciseAnimation && player.anims.currentAnim?.key !== 'coding') {
-          player.anims.play('coding', true);
-        }
-        if (!isExerciseAnimation) {
-          player.setScale(this.getImageScale('player'));
-        }
-        console.log(`🛑 Player ${playerData.username} stopped dancing`);
-      }
+  applyPlayerMotion(player: Player, motion: string) {
+    if (!player.isAlive && motion !== 'dead') {
+      // 죽은 상태면 무조건 death-image
+      player.setTexture('death-image');
+      player.setScale(this.getImageScale('death-image'));
+      player.anims.stop();
+      return;
+    }
+    switch (motion) {
+      case 'dancing':
+        player.anims.play('dance', true);
+        player.setScale(this.getImageScale('pkpk'));
+        break;
+      case 'bumpercar':
+        player.anims.play('bumpercar', true);
+        player.setScale(this.getImageScale('bumpercar'));
+        break;
+      case 'exercise':
+        player.anims.play('exercise', true);
+        player.setScale(this.getImageScale('exercise'));
+        break;
+      case 'coffee':
+        player.anims.play('coffee', true);
+        player.setScale(this.getImageScale('coffee'));
+        player.once('animationcomplete-coffee', () => {
+          socketService.emit('animationComplete', { type: 'coffee' });
+        });
+        break;
+      case 'shotgun':
+        player.anims.play('shotgun', true);
+        player.setScale(this.getImageScale('shotgun'));
+        player.once('animationcomplete-shotgun', () => {
+          socketService.emit('animationComplete', { type: 'shotgun' });
+        });
+        break;
+      case 'gaming':
+        player.anims.play('coding', true);
+        player.setScale(this.getImageScale('player'));
+        break;
+      case 'coding':
+      default:
+        player.anims.play('coding', true);
+        player.setScale(this.getImageScale('player'));
+        break;
+      case 'dead':
+        player.setTexture('death-image');
+        player.setScale(this.getImageScale('death-image'));
+        player.anims.stop();
+        break;
     }
   }
 
@@ -568,11 +540,6 @@ export default class GameScene extends Phaser.Scene {
       const nameText = player.getData('nameText') as Phaser.GameObjects.Text;
       if (nameText) {
         nameText.destroy();
-      }
-
-      const commitText = player.getData('commitText') as Phaser.GameObjects.Text;
-      if (commitText) {
-        commitText.destroy();
       }
       
       player.destroy();
@@ -590,18 +557,10 @@ export default class GameScene extends Phaser.Scene {
 
     switch (data.action) {
       case 'startDancing':
-        player.isDancing = true;
-        if (player.anims.currentAnim?.key !== 'dance') {
-          player.anims.play('dance', true);
-        }
-        player.setScale(this.getImageScale('pkpk'));
+        player.playerMotion = 'dancing';
         break;
       case 'stopDancing':
-        player.isDancing = false;
-        if (player.anims.currentAnim?.key !== 'coding') {
-          player.anims.play('coding', true);
-        }
-        player.setScale(this.getImageScale('player'));
+        player.playerMotion = 'coding';
         break;
       case 'push':
         console.log('Push action received');
@@ -700,13 +659,15 @@ export default class GameScene extends Phaser.Scene {
     const localPlayer = this.players.get(this.localPlayerId);
     if (localPlayer) {
       // Exercise 애니메이션을 강제로 재생하고 3초간 유지
+      localPlayer.playerMotion = 'exercise';
       localPlayer.anims.play('exercise', true);
       localPlayer.setScale(this.getImageScale('exercise'));
       console.log('🏃 Exercise animation started');
       
       // 3초 후에 원래 상태로 복귀 (단, 춤추고 있지 않을 때만)
       this.time.delayedCall(3000, () => {
-        if (localPlayer && !localPlayer.isDancing) {
+        if (localPlayer && localPlayer.playerMotion !== 'dancing') {
+          localPlayer.playerMotion = 'coding';
           localPlayer.anims.play('coding', true);
           localPlayer.setScale(this.getImageScale('player'));
           console.log('🏃 Exercise animation ended, back to coding');
