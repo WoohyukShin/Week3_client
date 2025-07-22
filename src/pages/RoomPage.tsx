@@ -29,10 +29,6 @@ const RoomPage = () => {
       return;
     }
 
-    if (!socketService.socket?.connected) {
-      socketService.connect();
-    }
-
     socketService.on('roomState', (newRoomState: any) => {
       setRoomState(newRoomState);
       setIsLoading(false);

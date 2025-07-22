@@ -20,8 +20,6 @@ const LobbyPage = () => {
   const { username, logout } = useAuth();
 
   useEffect(() => {
-    socketService.connect();
-
     socketService.on('connect', () => setError(''));
     socketService.on('connect_error', () => setError('서버 연결에 실패했습니다.'));
 
