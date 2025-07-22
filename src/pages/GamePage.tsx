@@ -57,6 +57,10 @@ const GamePage = () => {
   }, [navigate]);
 
   useEffect(() => {
+    socketService.emit('gameReady', {});
+  }, []);
+
+  useEffect(() => {
     const handleSkillAssigned = ({ skill }: any) => {
       console.log('[DEBUG] GamePage_tsx : skillAssigned:', skill);
       setSkillName(skill);

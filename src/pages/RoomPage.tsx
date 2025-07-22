@@ -62,9 +62,7 @@ const RoomPage = () => {
   }, [roomId, navigate]);
 
   const handleStartGame = () => {
-    if (roomState && roomState.hostId === socketService.socket?.id && !roomState.isGameStarted) {
-      socketService.emit('startGame', {});
-    }
+    navigate(`/game/${roomId}`);
   };
 
   const handleLeaveRoom = () => {
