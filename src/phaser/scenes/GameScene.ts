@@ -256,7 +256,6 @@ export default class GameScene extends Phaser.Scene {
     socketService.off('commitSuccess');
     socketService.off('pushStarted');
     socketService.off('pushFailed');
-    socketService.off('gameEnded');
     socketService.off('managerAppeared');
     socketService.off('skillEffect');
     // 이후 새로 등록
@@ -311,12 +310,7 @@ export default class GameScene extends Phaser.Scene {
       this.showPushFailed(data.socketId);
     });
 
-    // 게임 종료
-    socketService.on('gameEnded', (data: { winner: any }) => {
-      console.log('�� Game ended:', data.winner);
-      this.handleGameEnd(data.winner);
-    });
-
+    // 운영진 등장
     socketService.on('managerAppeared', () => {
       if (this.managerAppearTimeout) {
         clearTimeout(this.managerAppearTimeout);
@@ -722,21 +716,5 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  handleGameEnd(winner: any) {
-    const gameEndText = this.add.text(
-      this.scale.width / 2, 
-      this.scale.height / 2, 
-      winner ? `🏆 Winner: ${winner.username}!` : '🏁 Game Over - No Winner',
-      {
-        fontSize: '32px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 20, y: 10 }
-      }
-    ).setOrigin(0.5);
-
-    this.time.delayedCall(5000, () => {
-      window.location.href = '/';
-    });
-  }
+  // gameEnded 관련 리스너, 함수, 호출 모두 삭제
 }

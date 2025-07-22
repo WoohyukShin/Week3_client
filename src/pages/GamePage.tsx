@@ -31,6 +31,7 @@ const GamePage = () => {
   const [commitCount, setCommitCount] = useState(0);
   const [skillUsed, setSkillUsed] = useState('');
   const [gameTime, setGameTime] = useState('00:00');
+  const [showResultModal, setShowResultModal] = useState(false);
 
   useEffect(() => {
     if (gameContainer.current && !gameInstance.current) {
@@ -64,6 +65,7 @@ const GamePage = () => {
       setCommitCount(data.commitCount);
       setSkillUsed(data.skill);
       setGameTime(data.time);
+      setShowResultModal(true);
     };
 
     socketService.on('gameEnded', handleGameEnded);
@@ -146,17 +148,14 @@ const GamePage = () => {
       <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
       
       {/* ResultModal은 가장 마지막에 고정 렌더링 */}
-      {result && (
-        <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
-          <ResultModal
-            result={result}
-            commitCount={commitCount}
-            skillName={skillUsed}
-            timeTaken={gameTime}
-            onExit={() => navigate('/lobby')}
-          />
-        </div>
-      )}
+      <ResultModal
+        visible={showResultModal}
+        result={result || 'lose'}
+        commitCount={commitCount}
+        skillName={skillUsed}
+        timeTaken={gameTime}
+        onExit={() => navigate('/lobby')}
+      />
     </div>
   );
 };
