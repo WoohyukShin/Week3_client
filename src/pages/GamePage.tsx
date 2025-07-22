@@ -147,14 +147,22 @@ const GamePage = () => {
       />
       <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
       
-      {/* ResultModal은 가장 마지막에 고정 렌더링 */}
       <ResultModal
         visible={showResultModal}
         result={result || 'lose'}
         commitCount={commitCount}
         skillName={skillUsed}
         timeTaken={gameTime}
-        onExit={() => navigate('/lobby')}
+        onExit={() => {
+          try {
+            (gameInstance.current?.scene.scenes[0] as any)?.shutdown?.();
+          } catch (e) {}
+          try {
+            gameInstance.current?.destroy(true);
+          } catch (e) {}
+          gameInstance.current = null;
+          navigate('/lobby');
+        }}
       />
     </div>
   );

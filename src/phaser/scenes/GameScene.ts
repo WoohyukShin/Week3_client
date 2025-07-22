@@ -151,7 +151,7 @@ export default class GameScene extends Phaser.Scene {
     // 배경음악 반복 재생
     this.bgmAudio = new Audio('/src/assets/sound/bgm.mp3');
     this.bgmAudio.loop = true;
-    this.bgmAudio.volume = 0.5;
+    this.bgmAudio.volume = 0.2;
     this.bgmAudio.play().catch(() => {}); // 자동재생 정책 대응
   }
 
@@ -325,6 +325,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 스킬 SFX 재생 이벤트
     socketService.on('playSkillSfx', (data: { type: string }) => {
+      console.log('[DEBUG] GameScene.ts : playSkillSfx : ', data.type);
       const sfxList = this.SFX_MAP[data.type];
       if (sfxList) {
         let sfxPath = '';
