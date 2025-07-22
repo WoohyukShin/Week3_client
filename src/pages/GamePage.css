@@ -1,0 +1,52 @@
+/* src/pages/GamePage.css */
+.modal-skill-wrapper {
+  background: white; /* ✅ always white */
+  border-radius: 16px;
+  padding: 32px;
+  min-width: 320px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border: 4px solid #ccc; /* default border (overridden by skill class) */
+}
+
+.skill-bumpercar {
+  border-color: #f7b733; /* yellow-orange */
+}
+
+.skill-coffee {
+  border-color: #26c6da; /* blue-green */
+}
+
+.skill-exercise {
+  border-color: #43a047; /* green */
+}
+
+.skill-shotgun {
+  border-color: #e53935; /* red */
+}
+
+.skill-game {
+  border-color: #9c27b0; /* purple */
+}
+
+/* Text color (for <h2>) */
+.skill-bumpercar h2 {
+  color: #f7b733;
+}
+
+.skill-coffee h2 {
+  color: #26c6da;
+}
+
+.skill-exercise h2 {
+  color: #43a047;
+}
+
+.skill-shotgun h2 {
+  color: #e53935;
+}
+
+.skill-game h2 {
+  color: #9c27b0;
+}
