@@ -37,3 +37,5 @@ export const SKILL_INFO = {
     cooldown: 10,
   },
 }as const; 
+
+export type SkillKey = keyof typeof SKILL_INFO;

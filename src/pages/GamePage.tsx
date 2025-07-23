@@ -7,6 +7,7 @@ import ModalTab from '../components/ModalTab';
 import { SKILL_INFO } from '../constants/skills';
 import ResultModal from '../components/ResultModal';
 import socketService from '../services/socket';
+import { MUSCLE_TO_WIN } from '../constants/constants.ts';
 import './GamePage.css';
 
 const gameWidth = 1200;
@@ -40,6 +41,7 @@ const GamePage = () => {
   const [showLightEffect, setShowLightEffect] = useState(false);
   const [showBumpercarBanner, setShowBumpercarBanner] = useState(false);
 const [lastSkillUser, setLastSkillUser] = useState('');
+const [muscleCount, setMuscleCount] = useState(0);
 
 // 각 스킬별 남은 쿨타임(초)
 const [cooldowns, setCooldowns] = useState<Record<SkillKey, number>>({
@@ -209,9 +211,12 @@ bumpercar: 0, coffee:    0, exercise:  0, shotgun:   0, game:      0,});
   }, [showResultModal]);
 
   useEffect(() => {
-    const handleGameStateUpdate = () => {
-      setGameStateArrived(true);
-    };
+    const handleGameStateUpdate = (gameState: any) => {
+    setGameStateArrived(true);
+    // 내 근육량 업데이트
+    const me = gameState.players.find((p: any) => p.socketId === socketService.socket?.id);
+    if (me) setMuscleCount(me.muscleCount);
+  };
     socketService.on('gameStateUpdate', handleGameStateUpdate);
     return () => {
       socketService.off('gameStateUpdate', handleGameStateUpdate);
@@ -228,94 +233,122 @@ bumpercar: 0, coffee:    0, exercise:  0, shotgun:   0, game:      0,});
     }, 1000);
     return () => clearInterval(timer);  }, []);
 
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>
-      <ModalTab
-        visible={showSkillModal}
-        title={skillInfo?.name || ''}
-        description={skillInfo?.description || ''}
-        image={skillInfo?.image || ''}
-        okText="OK"
-        onOk={handleOk}
-        countText={`${readyCount} / ${totalCount}`}
-        skillName={skillName || undefined}
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          zIndex: 10,
-          pointerEvents: 'auto',
-        }}
-      />
-
-      <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
-
-      <ResultModal
-        visible={showResultModal}
-        result={result || 'lose'}
-        commitCount={commitCount}
-        skillName={skillUsed}
-        timeTaken={gameTime}
-        onExit={() => {
-          try {
-            (gameInstance.current?.scene.scenes[0] as any)?.shutdown?.();
-          } catch (e) {}
-          try {
-            gameInstance.current?.destroy(true);
-          } catch (e) {}
-          gameInstance.current = null;
-          navigate('/lobby');
-        }}
-      />
-
-      {/* ——————————————————————— 쿨타임 배너 ——————————————————————— */}
-      {(Object.entries(cooldowns) as [SkillKey, number][])
-        .filter(([, sec]) => sec > 0)
-        .map(([skill, sec]) => (
-          <div key={skill} className="cooldown-banner-simple">
-            {SKILL_INFO[skill].name} 쿨타임 중… ({sec}초 남음)
-          </div>
-        ))}
-
-      {/* HUD: 우측 하단 스킬 정보 */}
-{skillName && (
+return (
   <div
     style={{
-      position: 'absolute',
-      bottom: 20,
-      right: 20,
-      background: 'rgba(0,0,0,0.6)',
-      color: 'white',
-      padding: '12px 20px',
-      borderRadius: '12px',
-      fontSize: '16px',
-      lineHeight: '1.6',
-    }}
+      display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative', }}
   >
-    <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>내 스킬 현황</div>
-    <div>
-      {SKILL_INFO[skillName]?.name || skillName}:{' '}
-        {skillUsages[skillName] === Infinity ? '∞' : `${skillUsages[skillName]}회`}
-        {cooldowns[skillName] > 0 && (
-          <span style={{ marginLeft: 8, opacity: 0.8 }}>
-            ({cooldowns[skillName]}s)
-          </span>        )}
-    </div>
+    <ModalTab
+      visible={showSkillModal}
+      title={skillInfo?.name || ''}
+      description={skillInfo?.description || ''}
+      image={skillInfo?.image || ''}
+      okText="OK"
+      onOk={handleOk}
+      countText={`${readyCount} / ${totalCount}`}
+      skillName={skillName || undefined}
+      style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        zIndex: 10,
+        pointerEvents: 'auto',
+      }}
+    />
 
+    <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
 
-{showLightEffect && (
-  <div className="light-effect" />
-)}
+    <ResultModal
+      visible={showResultModal}
+      result={result || 'lose'}
+      commitCount={commitCount}
+      skillName={skillUsed}
+      timeTaken={gameTime}
+      onExit={() => {
+        try {
+          (gameInstance.current?.scene.scenes[0] as any)?.shutdown?.();
+        } catch {}
+        try {
+          gameInstance.current?.destroy(true);
+        } catch {}
+        gameInstance.current = null;
+        navigate('/lobby');
+      }}
+    />
 
+    {/* — Cooldown banners — */}
+    {(Object.entries(cooldowns) as [SkillKey, number][])
+      .filter(([, sec]) => sec > 0)
+      .map(([skill, sec]) => (
+        <div key={skill} className="cooldown-banner-simple">
+          {SKILL_INFO[skill].name} 쿨타임 중… ({sec}초 남음)
+        </div>
+      ))}
 
-  </div>
+    {/* — Light effect overlay */}
+    {showLightEffect && <div className="light-effect" />}
 
-  
-)}
+    {/* — HUD: 우측 하단 스킬 정보 — */}
+    {skillName && (
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          background: 'rgba(0,0,0,0.6)',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '12px',
+          fontSize: '16px',
+          lineHeight: '1.6',
+        }}
+      >
+        <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>
+          내 스킬 현황
+        </div>
+        <div>
+          {SKILL_INFO[skillName].name}:&nbsp;
+          {skillUsages[skillName] === Infinity
+            ? '∞'
+            : `${skillUsages[skillName]}회`}
+          {cooldowns[skillName] > 0 && (
+            <span style={{ marginLeft: 8, opacity: 0.8 }}>
+              ({cooldowns[skillName]}s)
+            </span>
+          )}
+        </div>
+
+        {/* 운동 스킬 받은 사람만 근육량 게이지 보이기 */}
+        {skillName === 'exercise' && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: '14px', marginBottom: 4 }}>
+              근육량: {muscleCount} / {MUSCLE_TO_WIN}
+            </div>
+            <div
+              style={{
+                width: 200,
+                height: 8,
+                background: 'rgba(255,255,255,0.3)',
+                borderRadius: 4,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${(muscleCount / MUSCLE_TO_WIN) * 100}%`,
+                  height: '100%',
+                  background: '#43a047',
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
-  );
-};
+    )}
+  </div>
+);
+}
 
 export default GamePage;
