@@ -10,8 +10,8 @@ import socketService from '../services/socket';
 import { MUSCLE_TO_WIN } from '../constants/constants.ts';
 import './GamePage.css';
 
-const gameWidth = 1200;
-const gameHeight = 800;
+const gameWidth = 1500;
+const gameHeight = 1000;
 
 const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
@@ -258,7 +258,7 @@ return (
       }}
     />
 
-    <div ref={gameContainer} style={{ width: gameWidth, height: gameHeight }} />
+    <div ref={gameContainer} />
 
     <ResultModal
       visible={showResultModal}
