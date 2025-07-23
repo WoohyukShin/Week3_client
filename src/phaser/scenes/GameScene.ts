@@ -22,6 +22,7 @@ interface GameState {
 export default class GameScene extends Phaser.Scene {
   private players: Map<string, Player> = new Map();
   private deskMap: Map<number, Phaser.GameObjects.Sprite> = new Map();
+  private chairMap: Map<number, Phaser.GameObjects.Image> = new Map();
   private localPlayerId: string = '';
   private gameState: GameState = { roomId: '', players: [], isManagerAppeared: false };
   private focusGaugeValue: number = 100;
@@ -174,6 +175,7 @@ export default class GameScene extends Phaser.Scene {
     this.bumpercarAudio = null;
     this.playerPositions = {};
     this.deskMap.clear(); // 초기화
+    this.chairMap.clear(); // 초기화
 
     this.add.image(0, 0, 'background')
       .setOrigin(0, 0)
@@ -499,10 +501,11 @@ export default class GameScene extends Phaser.Scene {
         .setScale(this.getImageScale('desk'))
         .setDepth(1);
       this.deskMap.set(idx, deskSprite);
-      // Chair 배치
-      this.add.image(position.x, chairY, 'chair')
+      // Chair 배치 및 관리
+      const chair = this.add.image(position.x, chairY, 'chair')
         .setScale(this.getImageScale('chair'))
         .setDepth(3);
+      this.chairMap.set(idx, chair);
     });
   }
 
@@ -632,7 +635,7 @@ export default class GameScene extends Phaser.Scene {
         const deskFrame = Math.floor(Math.random() * 3);
         deskSprite.setFrame(deskFrame);
         deskSprite.setScale(this.getImageScale('desk') * 1.5);
-        deskSprite.y -= this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 40;
+        deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 40;
       } else {
         deskSprite.setFrame(3);
         deskSprite.setScale(this.getImageScale('desk'));
@@ -700,7 +703,13 @@ export default class GameScene extends Phaser.Scene {
         nameText.destroy();
       }
       // deskSprite는 이미 자리별로 생성되어 있으므로 따로 삭제하지 않음
-      
+      // chair도 관리하므로 삭제
+      const playerIndex = Array.from(this.players.keys()).indexOf(socketId);
+      const chair = this.chairMap.get(playerIndex);
+      if (chair) {
+        chair.destroy();
+        this.chairMap.delete(playerIndex);
+      }
       player.destroy();
       this.players.delete(socketId);
     }
@@ -778,17 +787,23 @@ export default class GameScene extends Phaser.Scene {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-      
+      // deathplayer 텍스트
       const deathText = this.add.text(player.x, player.y - 200 * scaleFactor, `💀 ${reason}`, {
         fontSize: `${Math.max(14, 16 * scaleFactor)}px`,
         color: '#ff0000',
         backgroundColor: '#000000',
         padding: { x: 5 * scaleFactor, y: 2 * scaleFactor }
       }).setOrigin(0.5);
-
       this.time.delayedCall(3000, () => {
         deathText.destroy();
       });
+      // 의자 제거
+      const playerIndex = Array.from(this.players.keys()).indexOf(socketId);
+      const chair = this.chairMap.get(playerIndex);
+      if (chair) {
+        chair.destroy();
+        this.chairMap.delete(playerIndex);
+      }
     }
   }
 
