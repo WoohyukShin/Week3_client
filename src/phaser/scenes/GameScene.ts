@@ -103,6 +103,8 @@ export default class GameScene extends Phaser.Scene {
     manager: 2.0,
   };
   private danceAudioArr: { danceType: string; audio: HTMLAudioElement }[] = [];
+  private spaceKey!: Phaser.Input.Keyboard.Key;
+  private prevSpaceDown: boolean = false;
 
   constructor() {
     super('GameScene');
@@ -437,21 +439,29 @@ export default class GameScene extends Phaser.Scene {
 
   setupInput() {
     // 춤추기 (스페이스바)
-    this.input.keyboard?.on('keydown-SPACE', () => {
-      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
-      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
-      socketService.emit('playerAction', { action: 'startDancing', payload: { danceType: randomDanceType } });
-    });
-    this.input.keyboard?.on('keyup-SPACE', () => {
-      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
-      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
-      socketService.emit('playerAction', { action: 'stopDancing', payload: { danceType: randomDanceType } });
-    });
+    if (!this.input.keyboard) return;
+    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     // Z키로 스킬 사용
-    this.input.keyboard?.on('keydown-Z', () => {
+    this.input.keyboard.on('keydown-Z', () => {
       console.log("[DEBUG] GameScene.ts : skill used!!");
       socketService.emit('skillUse', {});
     });
+  }
+
+  update() {
+    if (!this.spaceKey) return;
+    // 스페이스바 JustDown: 춤 시작
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
+      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
+      socketService.emit('playerAction', { action: 'startDancing', payload: { danceType: randomDanceType } });
+    }
+    // 스페이스바 JustUp: 춤 멈춤
+    if (Phaser.Input.Keyboard.JustUp(this.spaceKey)) {
+      const danceTypes = Object.keys(this.DANCE_BGM_MAP);
+      const randomDanceType = danceTypes[Math.floor(Math.random() * danceTypes.length)];
+      socketService.emit('playerAction', { action: 'stopDancing', payload: { danceType: randomDanceType } });
+    }
   }
 
   setupPlayerPositions() { // player 위치 설정
