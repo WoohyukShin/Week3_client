@@ -36,12 +36,14 @@ const GamePage = () => {
   const [gameStateArrived, setGameStateArrived] = useState(false);
   const gameStartedRef = useRef(false);
 
-  const [isCooldown, setIsCooldown] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [skillUsageLeft, setSkillUsageLeft] = useState<number | null>(null);
   const [showLightEffect, setShowLightEffect] = useState(false);
   const [showBumpercarBanner, setShowBumpercarBanner] = useState(false);
 const [lastSkillUser, setLastSkillUser] = useState('');
+
+// 각 스킬별 남은 쿨타임(초)
+const [cooldowns, setCooldowns] = useState<Record<SkillKey, number>>({
+bumpercar: 0, coffee:    0, exercise:  0, shotgun:   0, game:      0,});
 
   const [skillUsages, setSkillUsages] = useState({
     bumpercar: 1,
@@ -150,20 +152,11 @@ const [lastSkillUser, setLastSkillUser] = useState('');
           };
         });
 
-        // 쿨타임 (예: bumpercar만)
-        if (skill === 'bumpercar') {
-          let time = 5;
-          setCooldownTime(time);
-          setIsCooldown(true);
-          const interval = setInterval(() => {
-            time -= 1;
-            setCooldownTime(time);
-            if (time <= 0) {
-              clearInterval(interval);
-              setIsCooldown(false);
-            }
-          }, 1000);
-        }
+        // 📌 모든 스킬의 cooldown 필드만큼 남은 시간 설정
+        if (SKILL_INFO[skill as SkillKey]?.cooldown) { setCooldowns(prev => ({
+           ...prev,
+            [skill]: SKILL_INFO[skill as SkillKey].cooldown,
+          }));        }
 
         if (skill === 'bumpercar') {
   setShowBumpercarBanner(true);
@@ -225,6 +218,16 @@ const [lastSkillUser, setLastSkillUser] = useState('');
     };
   }, []);
 
+  useEffect(() => { const timer = setInterval(() => {
+      setCooldowns(prev =>
+        (Object.keys(prev) as SkillKey[]).reduce((acc, key) => {
+          acc[key] = Math.max(0, prev[key] - 1);
+          return acc;
+        }, {} as Record<SkillKey, number>)
+      );
+    }, 1000);
+    return () => clearInterval(timer);  }, []);
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative' }}>
       <ModalTab
@@ -267,11 +270,14 @@ const [lastSkillUser, setLastSkillUser] = useState('');
         }}
       />
 
-      {isCooldown && (
-        <div className="cooldown-banner-simple">
-          스킬 쿨타임 중... ({cooldownTime}초 남음)
-        </div>
-      )}
+      {/* ——————————————————————— 쿨타임 배너 ——————————————————————— */}
+      {(Object.entries(cooldowns) as [SkillKey, number][])
+        .filter(([, sec]) => sec > 0)
+        .map(([skill, sec]) => (
+          <div key={skill} className="cooldown-banner-simple">
+            {SKILL_INFO[skill].name} 쿨타임 중… ({sec}초 남음)
+          </div>
+        ))}
 
       {/* HUD: 우측 하단 스킬 정보 */}
 {skillName && (
@@ -291,7 +297,11 @@ const [lastSkillUser, setLastSkillUser] = useState('');
     <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>내 스킬 현황</div>
     <div>
       {SKILL_INFO[skillName]?.name || skillName}:{' '}
-      {skillUsages[skillName] === Infinity ? '∞' : `${skillUsages[skillName]}회`}
+        {skillUsages[skillName] === Infinity ? '∞' : `${skillUsages[skillName]}회`}
+        {cooldowns[skillName] > 0 && (
+          <span style={{ marginLeft: 8, opacity: 0.8 }}>
+            ({cooldowns[skillName]}s)
+          </span>        )}
     </div>
 
 
