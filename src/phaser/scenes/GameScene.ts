@@ -735,7 +735,8 @@ export default class GameScene extends Phaser.Scene {
       if (sfxList && Array.isArray(sfxList) && sfxList.length > 0) {
         const sfxPath = sfxList[Math.floor(Math.random() * sfxList.length)];
         const audio = new Audio(sfxPath);
-        audio.volume = this.SOUND_SCALES['manager'] * this.SFX_VOLUME;
+        console.log('[DEBUG] GameScene.ts : manager SFX 재생 중...');
+        audio.volume = 1.0; // 브라우저에서 허용하는 최대 볼륨
         audio.play();
       }
       console.log('🚨 Manager appeared and started animation!');
