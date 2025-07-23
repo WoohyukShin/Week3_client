@@ -625,6 +625,7 @@ export default class GameScene extends Phaser.Scene {
       const deskSprite = this.deskMap.get(playerIndex);
       if (deskSprite) {
         if (playerData.playerMotion === 'gaming') {
+          console.log("[DEBUG] GameScene.ts : 'gaming' 모션 재생하려고 함.")
           const deskFrame = Math.floor(Math.random() * 3);
           deskSprite.setFrame(deskFrame);
           deskSprite.setScale(this.getImageScale('desk') * 1.5);
