@@ -57,6 +57,14 @@ export default class GameScene extends Phaser.Scene {
       '/sound/coding_sound1.mp3',
       '/sound/coding_sound2.mp3',
     ],
+    manager: [
+      '/sound/manager1.mp3',
+      '/sound/manager2.mp3',
+      '/sound/manager3.mp3',
+      '/sound/manager4.mp3',
+      '/sound/manager5.mp3',
+      '/sound/manager6.mp3',
+    ],
   };
 
   // 이미지별 스케일 설정 (워터마크 제거 및 crop에 따른 조정)
@@ -92,7 +100,8 @@ export default class GameScene extends Phaser.Scene {
     shotgun: 0.8,
     game: 1.0,
     default: 1.0,
-    pkpk: 0.5, // 예시: pkpk.mp3
+    pkpk: 0.5,
+    manager: 2.0,
   };
   private danceAudioArr: { danceType: string; audio: HTMLAudioElement }[] = [];
 
@@ -466,19 +475,21 @@ export default class GameScene extends Phaser.Scene {
 
   setupAllDesksAndChairs() { // 책상, 의자 설정
     // 모든 플레이어 위치에 desk와 chair 미리 배치
-    Object.values(this.playerPositions).forEach((position) => {
+    Object.values(this.playerPositions).forEach((position, idx) => {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
       const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
-      // 책상은 기존보다 위로 20px 이동
+      // 책상은 기존보다 오른쪽 위로 이동
+      const deskX = position.x + 20;
       const deskY = position.y + 50 * scaleFactor - 20;
-      // 의자는 기존보다 아래로 20px 이동
-      const chairY = position.y + 120 * scaleFactor + 20;
+      // 의자는 기존보다 아래로 이동
+      const chairY = position.y + 120 * scaleFactor + 40;
       // Desk 스프라이트 생성 (플레이어별)
       const deskFrame = 3;
-      const deskSprite = this.add.sprite(position.x, deskY, 'desk', deskFrame)
+      const deskSprite = this.add.sprite(deskX, deskY, 'desk', deskFrame)
         .setScale(this.getImageScale('desk'))
         .setDepth(1);
+      this.deskMap.set(idx, deskSprite);
       // Chair 배치
       this.add.image(position.x, chairY, 'chair')
         .setScale(this.getImageScale('chair'))
@@ -608,11 +619,16 @@ export default class GameScene extends Phaser.Scene {
     const playerIndex = Array.from(this.players.keys()).indexOf(playerData.socketId);
     const deskSprite = this.deskMap.get(playerIndex);
     if (deskSprite) {
-      let deskFrame = 3;
       if (playerData.playerMotion === 'gaming') {
-        deskFrame = Math.floor(Math.random() * 3);
+        const deskFrame = Math.floor(Math.random() * 3);
+        deskSprite.setFrame(deskFrame);
+        deskSprite.setScale(this.getImageScale('desk') * 1.5);
+        player.setScale(this.getImageScale('player') * 1.5);
+      } else {
+        deskSprite.setFrame(3);
+        deskSprite.setScale(this.getImageScale('desk'));
+        player.setScale(this.getImageScale('player'));
       }
-      deskSprite.setFrame(deskFrame);
     }
   }
 
@@ -714,6 +730,14 @@ export default class GameScene extends Phaser.Scene {
       this.managerSprite.on('animationcomplete-manager', () => {
         this.managerSprite.setFrame(5); // 마지막 프레임(0~5)
       }, this);
+      // === 운영진 등장 효과음 랜덤 재생 ===
+      const sfxList = this.SFX_MAP['manager'];
+      if (sfxList && Array.isArray(sfxList) && sfxList.length > 0) {
+        const sfxPath = sfxList[Math.floor(Math.random() * sfxList.length)];
+        const audio = new Audio(sfxPath);
+        audio.volume = this.SOUND_SCALES['manager'] * this.SFX_VOLUME;
+        audio.play();
+      }
       console.log('🚨 Manager appeared and started animation!');
     } else {
       console.log('❌ Manager sprite not found!');
