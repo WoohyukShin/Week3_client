@@ -116,7 +116,7 @@ export default class GameScene extends Phaser.Scene {
     const imageScale = this.IMAGE_SCALES[imageKey as keyof typeof this.IMAGE_SCALES] || 1.0;
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
-    const scaleFactor = Math.min(screenWidth / 1500, screenHeight / 1000);
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
     
     return imageScale * scaleFactor;
   }
@@ -230,7 +230,7 @@ export default class GameScene extends Phaser.Scene {
     // 화면 크기에 비례하여 UI 크기 설정
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
-    const uiScale = Math.min(screenWidth / 1500, screenHeight / 1000); // UI 스케일 팩터
+    const uiScale = Math.min(screenWidth / 1200, screenHeight / 800); // UI 스케일 팩터
     
     const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
     const barHeight = 20 * uiScale * 1.5; // 게이지 바 높이 1.5배 확대
@@ -483,7 +483,7 @@ export default class GameScene extends Phaser.Scene {
     Object.values(this.playerPositions).forEach((position, idx) => {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
-      const scaleFactor = Math.min(screenWidth / 1500, screenHeight / 1000);
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
       // 책상은 기존보다 오른쪽 위로 이동
       const deskX = position.x + 20;
       const deskY = position.y + 50 * scaleFactor - 20;
@@ -507,7 +507,7 @@ export default class GameScene extends Phaser.Scene {
     // 매니저 위치 설정 (화면 3/4 정도)
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
-    const scaleFactor = Math.min(screenWidth / 1500, screenHeight / 1000);
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
     
     // 매니저 위치에 door 이미지 배치 (평소 상태)
     this.managerSprite = this.add.sprite(
@@ -531,7 +531,7 @@ export default class GameScene extends Phaser.Scene {
       // UI 스케일 팩터 계산
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
-      const uiScale = Math.min(screenWidth / 1500, screenHeight / 1000);
+      const uiScale = Math.min(screenWidth / 1200, screenHeight / 800);
       const barWidth = 200 * uiScale * 1.5; // 게이지 바 크기 1.5배 확대
       // 몰입 게이지 (Flow Gauge) 업데이트
       const oldFlowGauge = this.focusGaugeValue;
@@ -588,7 +588,7 @@ export default class GameScene extends Phaser.Scene {
     // 텍스트도 반응형으로
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
-    const scaleFactor = Math.min(screenWidth / 1500, screenHeight / 1000);
+    const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
     const fontSize = Math.max(12, 14 * scaleFactor);
     const nameText = this.add.text(position.x, position.y - 150 * scaleFactor, playerData.username, {
       fontSize: `${fontSize}px`,
@@ -628,11 +628,11 @@ export default class GameScene extends Phaser.Scene {
           const deskFrame = Math.floor(Math.random() * 3);
           deskSprite.setFrame(deskFrame);
           deskSprite.setScale(this.getImageScale('desk') * 1.5);
-          deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1500, this.scale.height / 1000) - 50;
+          deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 40;
         } else {
           deskSprite.setFrame(3);
           deskSprite.setScale(this.getImageScale('desk'));
-          deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1500, this.scale.height / 1000) - 20;
+          deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 20;
         }
       }
     }
@@ -781,7 +781,7 @@ export default class GameScene extends Phaser.Scene {
     if (player) {
       const screenWidth = this.scale.width;
       const screenHeight = this.scale.height;
-      const scaleFactor = Math.min(screenWidth / 1500, screenHeight / 1000);
+      const scaleFactor = Math.min(screenWidth / 1200, screenHeight / 800);
       // deathplayer 텍스트
       const deathText = this.add.text(player.x, player.y - 200 * scaleFactor, `💀 ${reason}`, {
         fontSize: `${Math.max(14, 16 * scaleFactor)}px`,

@@ -10,8 +10,8 @@ import socketService from '../services/socket';
 import { MUSCLE_TO_WIN } from '../constants/constants.ts';
 import './GamePage.css';
 
-const gameWidth = 1500;
-const gameHeight = 1000;
+const gameWidth = 1200;
+const gameHeight = 800;
 
 const GamePage = () => {
   const gameContainer = useRef<HTMLDivElement>(null);
