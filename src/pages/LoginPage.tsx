@@ -64,11 +64,11 @@ const LoginPage = () => {
         navigate('/lobby');
       } else {
         // 회원가입 시 중복확인 검증
-        if (usernameStatus && !usernameStatus.available) {
+        if (!usernameStatus || !usernameStatus.available) {
           setError('사용자명 중복확인을 해주세요.');
           return;
         }
-        if (nicknameStatus && !nicknameStatus.available) {
+        if (!nicknameStatus || !nicknameStatus.available) {
           setError('닉네임 중복확인을 해주세요.');
           return;
         }
