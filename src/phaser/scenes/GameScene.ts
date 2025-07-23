@@ -623,11 +623,11 @@ export default class GameScene extends Phaser.Scene {
         const deskFrame = Math.floor(Math.random() * 3);
         deskSprite.setFrame(deskFrame);
         deskSprite.setScale(this.getImageScale('desk') * 1.5);
-        player.setScale(this.getImageScale('player') * 1.5);
+        deskSprite.y -= 30;
       } else {
         deskSprite.setFrame(3);
         deskSprite.setScale(this.getImageScale('desk'));
-        player.setScale(this.getImageScale('player'));
+        deskSprite.y = this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 20;
       }
     }
   }
@@ -669,7 +669,6 @@ export default class GameScene extends Phaser.Scene {
         break;
       case 'gaming':
         player.anims.play('coding', true);
-        player.setScale(this.getImageScale('player'));
         break;
       case 'coding':
       default:
@@ -732,12 +731,17 @@ export default class GameScene extends Phaser.Scene {
       }, this);
       // === 운영진 등장 효과음 랜덤 재생 ===
       const sfxList = this.SFX_MAP['manager'];
-      if (sfxList && Array.isArray(sfxList) && sfxList.length > 0) {
-        const sfxPath = sfxList[Math.floor(Math.random() * sfxList.length)];
-        const audio = new Audio(sfxPath);
-        console.log('[DEBUG] GameScene.ts : manager SFX 재생 중...');
-        audio.volume = 1.0; // 브라우저에서 허용하는 최대 볼륨
-        audio.play();
+      if (sfxList && Array.isArray(sfxList)) {
+        let sfxPath = '';
+        if (sfxList.length > 0) {
+          sfxPath = sfxList[Math.floor(Math.random() * sfxList.length)];
+        }
+        if (sfxPath) {
+          const audio = new Audio(sfxPath);
+          audio.volume = 1.0;
+          audio.play();
+          console.log('[DEBUG] GameScene.ts : manager SFX 재생 중...');
+        }
       }
       console.log('🚨 Manager appeared and started animation!');
     } else {
