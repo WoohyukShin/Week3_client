@@ -43,7 +43,6 @@ export default class GameScene extends Phaser.Scene {
       '/sound/coffee_sound2.mp3',
     ],
     exercise: [
-      '/sound/exercise_sound1.mp3',
     ],
     shotgun: [
       '/sound/shotgun_sound1.mp3',
@@ -623,7 +622,7 @@ export default class GameScene extends Phaser.Scene {
         const deskFrame = Math.floor(Math.random() * 3);
         deskSprite.setFrame(deskFrame);
         deskSprite.setScale(this.getImageScale('desk') * 1.5);
-        deskSprite.y -= 30;
+        deskSprite.y -= this.playerPositions[`player_${playerIndex}`].y + 50 * Math.min(this.scale.width / 1200, this.scale.height / 800) - 40;
       } else {
         deskSprite.setFrame(3);
         deskSprite.setScale(this.getImageScale('desk'));
