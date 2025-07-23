@@ -74,7 +74,7 @@
   width: 80px;
   height: 100%;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), transparent 80%);
+  background: linear-gradient(to bottom, rgba(0, 255, 0, 0.8), transparent 80%);
   animation: light-fall 1.2s ease-out forwards;
   z-index: 999;
   pointer-events: none;
